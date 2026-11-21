@@ -28,9 +28,10 @@ description of "a bit thicker, less rim, softer light" survives the round
 trip through code and reloads. A lab turns hours of back and forth into one
 sitting.
 
-So the agent never tunes the material blind. It builds the lab, hands it
-over, asks for the values as JSON, and builds components only on what the
-human chose.
+So the agent never tunes the material blind. Every component it builds is
+shown in the lab first, with the controls beside it. The human tweaks and
+sends the values back as JSON, or says the current look is fine. Either way
+the agent keeps going.
 
 ## Workflow
 
@@ -40,9 +41,10 @@ Copy this checklist into the response and work through it in order:
 Liquid glass progress:
 - [ ] 1. Know what sits behind the glass, and get two references
 - [ ] 2. Pick the architecture
-- [ ] 3. Build the tuning lab before any component
-- [ ] 4. Stop: the human tunes and pastes the values back as JSON
-- [ ] 5. Build the components on the tuned material
+- [ ] 3. Build the tuning lab
+- [ ] 4. For each component: build it, show it in the lab, take tweaks or
+         keep the current values
+- [ ] 5. Wire the components into the page
 - [ ] 6. Verify against the checklist at the end
 ```
 
@@ -69,12 +71,12 @@ If the human has no background yet, use a rich, detailed image for the lab
 Content always stays real HTML laid over the glass: selectable, accessible,
 crisp. The canvas draws only the image and the material.
 
-### 3. Build the lab first
+### 3. Build the lab
 
-Before any component, build one page (`references/lab.md`):
+One page, built once and kept (`references/lab.md`):
 
 - the real image, full bleed
-- one or more glass shapes holding representative content
+- the component being worked on, with its real content
 - a slider for every material property, with its value shown
 - a switch between backgrounds, and the theme toggle
 - a **Copy as JSON** button
@@ -83,33 +85,39 @@ Before any component, build one page (`references/lab.md`):
 look is found. Guessing values in code and reloading is how hours go. Keep
 the lab after launch: every later change to the material goes through it.
 
-### 4. Stop and ask for the tuned values
+### 4. One component at a time, through the lab
 
-This is a hard stop. Do not build components on the starting values. Hand
-the lab over and ask for the JSON, in words like these:
+Build each component the same way:
 
-> The glass lab is at `/lab/glass`. Tune it in this order: edge band and
-> thickness, then refraction, dispersion, frost, light angle, specular, rim,
-> shadow. Check every background and both themes. When it looks right, press
-> **Copy as JSON** and paste it here. If you want two looks (regular for text
-> panels, clear over rich media), tune and paste each one.
+1. **Build it in the lab** on the current material: `MATERIALS.regular` for
+   the first one, the locked preset after that.
+2. **Show it and ask** for tweaks or a go ahead, in words like these:
 
-Then wait. When the JSON arrives:
+   > The player widget is in the glass lab at `/lab/glass`, on the current
+   > material. Drag the sliders until it looks right and press **Copy as
+   > JSON**, then paste it here. Or tell me it already looks right and I'll
+   > keep these values.
 
-1. Check it: every key of `GlassMaterial` present, numbers in range. Ask
-   about anything missing rather than filling it in.
-2. Write it as a named preset in one file (`regular`, `clear`), with the
-   date and the background it was judged on in a comment. That file is the
-   single source of truth.
-3. Point the lab's defaults at the preset, so the next tuning session starts
-   from the chosen look.
-4. Say back what was locked, in one short list.
+3. **Keep going either way.** Pasted JSON: check every key of
+   `GlassMaterial` is present and in range (ask about anything missing
+   rather than filling it in), then lock it as the preset. "Looks right":
+   keep the current values as the preset. No reply needed to continue with
+   unrelated work, but do not call the material final until the human has
+   seen it.
+4. **Lock it** in one file, the single source of truth: a named preset
+   (`regular`, plus `clear` if a second look was tuned) with the date and
+   the background it was judged on in a comment. Point the lab's defaults at
+   it, so the next component starts from the chosen look.
 
-Only then go to step 5. Never "improve" tuned values later without asking:
-changes go through the lab and come back as JSON again. If the human
-explicitly says to skip tuning, use `MATERIALS.regular` and say so.
+For every further component, the lab still comes first: show it there on
+the locked preset and ask the same question, keep these values or tweak. A
+tweak for one component alone (a smaller button wanting less rim) becomes a
+per component override on top of the preset, not a new global value.
 
-### 5. Build the components
+Never change tuned values on your own: changes go through the lab and come
+back as JSON.
+
+### 5. Wire the components into the page
 
 Wire the renderer (React shown, the class is framework free):
 

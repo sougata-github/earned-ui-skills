@@ -46,9 +46,11 @@ when they hold everywhere.
 
 ## Locking values
 
-The human presses Copy as JSON and pastes it into the conversation. The
-agent waits for it, checks every key is present and in range, and writes it
-as a named preset in one file, the single source of truth:
+Each component is shown in the lab before it ships. The human either presses
+Copy as JSON and pastes the values into the conversation, or says the current
+look is fine. The agent checks pasted values (every key present and in
+range) and writes them as a named preset in one file, the single source of
+truth:
 
 ```ts
 // Tuned by eye in /lab/glass on 2026-11-21, judged on the ocean, clouds and
@@ -59,9 +61,10 @@ export const GLASS = {
 } satisfies Record<string, GlassMaterial>
 ```
 
-Then the lab's defaults point at the preset, so the next session starts from
-the chosen look. Later changes go through the lab again and come back as
-JSON, never straight into code.
+Then the lab's defaults point at the preset, so the next component starts
+from the chosen look. A tweak that suits one component only becomes an
+override on that component, on top of the preset. Later changes go through
+the lab again and come back as JSON, never straight into code.
 
 ## Recording the lab
 
