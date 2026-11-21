@@ -150,6 +150,9 @@ Apple's rule is never glass on glass. The one exception that reads right is
 a small piece of glass sitting on a panel and bending it: a field and a send
 button on a glass form, a round album cover on a glass player.
 
+Opt in: use it only when the human asks for glass on glass. With no insets
+the shader skips this path entirely, so it costs nothing when unused.
+
 The renderer draws these as insets. Mark the element `data-glass-inset`
 (or pass `inset: true` in a shape). Up to `MAX_INSETS` per canvas.
 

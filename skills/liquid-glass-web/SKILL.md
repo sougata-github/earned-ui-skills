@@ -144,9 +144,11 @@ new ResizeObserver(() => { stage.resize(); frame() }).observe(canvas)
 - Arrive by materializing: animate `setMaterialize` from 0 to 1 on a
   critically damped curve (`materializeCurve`), never by fading opacity.
 - Content on glass uses fills and vibrant, high contrast ink, never another
-  glass layer (`references/apple-rules.md`). The one exception: a small
-  inset that bends the panel under it (a send button, a round album cover).
-  Mark it `data-glass-inset` (`references/optics.md`, glass on glass).
+  glass layer (`references/apple-rules.md`). Glass on glass is an opt in
+  extension, only when the human asks for it: a small inset that bends the
+  panel under it (a send button, a round album cover), marked
+  `data-glass-inset` (`references/optics.md`, glass on glass). Never add
+  insets on your own.
 
 ### 6. Verify
 
@@ -191,8 +193,9 @@ Full notes and sources: `references/apple-rules.md`.
 
 - Glass is the functional layer floating over content (controls, bars,
   widgets on art), not the content itself. Use it sparingly.
-- Never glass on glass. Things on glass are fills, ink and vibrancy. The
-  exception: small insets that refract the panel they sit on.
+- Never glass on glass. Things on glass are fills, ink and vibrancy. Small
+  insets that refract the panel they sit on are an opt in exception, only
+  when the human asks.
 - Regular (frosted) for text heavy panels, clear only over rich media with
   bold content and a dimming layer.
 - Bigger glass reads thicker: deeper shadow, stronger lensing.
