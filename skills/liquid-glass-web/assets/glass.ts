@@ -365,7 +365,8 @@ export class GlassStage {
       preserveDrawingBuffer: false,
     })
     if (!gl) throw new Error("WebGL2 is not available")
-    if (gl.isContextLost()) throw new Error("The canvas's WebGL context is lost")
+    if (gl.isContextLost())
+      throw new Error("The canvas's WebGL context is lost")
     this.gl = gl
     this.dpr = Math.min(window.devicePixelRatio || 1, options.maxDpr ?? 2)
     this.background = options.background ?? [0.08, 0.09, 0.11]
