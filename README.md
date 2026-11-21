@@ -1,5 +1,11 @@
 # earned-ui-skills
 
+<a href="demo-assets/liquid-glass-demo.mp4">
+  <img src="demo-assets/liquid-glass-preview.webp" alt="Six liquid glass widgets on a moving landscape, a material panel beside them, and a cursor tuning the glass and using the widgets" width="100%">
+</a>
+
+<sub>Liquid glass built with the <code>liquid-glass-web</code> skill: real WebGL2 refraction, tuned live in a lab. <a href="demo-assets/liquid-glass-demo.mp4">Watch the full demo (37s)</a>.</sub>
+
 UI skills for coding agents, earned the hard way. Each one folds a real
 build into a workflow an agent can follow: the order to work in, the rules,
 a small reference implementation to adapt, and the mistakes worth not
