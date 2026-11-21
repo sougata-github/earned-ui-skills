@@ -67,4 +67,7 @@ and the lessons from shipping it.
 
 ## License
 
-MIT
+The code and the skills are MIT licensed.
+
+The images in `demo-assets/` are not. They show artwork that belongs to its
+owner, all rights reserved: do not copy, reuse or redistribute them.
