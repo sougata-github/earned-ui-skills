@@ -85,6 +85,13 @@ hidden one own the ids. Fix: render once and position with CSS.
 
 ## Rendering
 
+**"Shader compile failed" with no log, only in development.** The cleanup
+forced the WebGL context lost (`WEBGL_lose_context`). React mounts effects
+twice in development, on the same canvas, and a canvas hands back the same
+context forever, so the second mount got a dead one and every compile
+failed with a null log. Fix: dispose deletes textures and programs only,
+never loses the context. Check `gl.isContextLost()` before building.
+
 **The refracted edge came out blurry.** Automatic mip selection reads the
 big jumps refraction makes between neighbouring pixels as minification.
 Fix: `textureLod` at an explicit level matched to the image's scale.

@@ -352,6 +352,7 @@ export class GlassStage {
   private shapes: GlassShape[] = []
   private materialize = 1
   private background: [number, number, number]
+  private disposed = false
 
   constructor(
     private canvas: HTMLCanvasElement,
@@ -364,6 +365,7 @@ export class GlassStage {
       preserveDrawingBuffer: false,
     })
     if (!gl) throw new Error("WebGL2 is not available")
+    if (gl.isContextLost()) throw new Error("The canvas's WebGL context is lost")
     this.gl = gl
     this.dpr = Math.min(window.devicePixelRatio || 1, options.maxDpr ?? 2)
     this.background = options.background ?? [0.08, 0.09, 0.11]
@@ -396,6 +398,8 @@ export class GlassStage {
     const img = await loadImage(src).catch(() =>
       fallbackSrc ? loadImage(fallbackSrc) : Promise.reject()
     )
+    // The stage may have been disposed while the image loaded (an unmount).
+    if (this.disposed) return
     const gl = this.gl
     gl.bindTexture(gl.TEXTURE_2D, this.texture)
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false)
@@ -450,6 +454,7 @@ export class GlassStage {
   }
 
   render() {
+    if (this.disposed) return
     const gl = this.gl
     const d = this.dpr
     const m = this.material
@@ -499,10 +504,14 @@ export class GlassStage {
     gl.drawArrays(gl.TRIANGLES, 0, 3)
   }
 
+  /** Frees the GPU resources. The context itself stays alive: a canvas
+   *  keeps one context for its whole life, so forcing it lost here would
+   *  break the next stage built on the same canvas (React mounts effects
+   *  twice in development, on the same element). */
   dispose() {
+    this.disposed = true
     this.gl.deleteTexture(this.texture)
     this.gl.deleteProgram(this.program)
-    this.gl.getExtension("WEBGL_lose_context")?.loseContext()
   }
 }
 
@@ -557,7 +566,14 @@ function link(gl: WebGL2RenderingContext, vs: string, fs: string) {
     gl.shaderSource(shader, source)
     gl.compileShader(shader)
     if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-      throw new Error(gl.getShaderInfoLog(shader) ?? "shader compile failed")
+      // An empty log almost always means the context is lost, not the code.
+      const log = gl.getShaderInfoLog(shader)
+      throw new Error(
+        log ||
+          (gl.isContextLost()
+            ? "WebGL context lost while compiling the glass shader"
+            : "Glass shader failed to compile")
+      )
     }
     gl.attachShader(program, shader)
   }
