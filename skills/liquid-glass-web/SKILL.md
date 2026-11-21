@@ -29,7 +29,8 @@ trip through code and reloads. A lab turns hours of back and forth into one
 sitting.
 
 So the agent never tunes the material blind. It builds the lab, hands it
-over, and builds components only on values the human chose.
+over, asks for the values as JSON, and builds components only on what the
+human chose.
 
 ## Workflow
 
@@ -40,7 +41,7 @@ Liquid glass progress:
 - [ ] 1. Know what sits behind the glass, and get two references
 - [ ] 2. Pick the architecture
 - [ ] 3. Build the tuning lab before any component
-- [ ] 4. The human tunes by eye, values come back as JSON
+- [ ] 4. Stop: the human tunes and pastes the values back as JSON
 - [ ] 5. Build the components on the tuned material
 - [ ] 6. Verify against the checklist at the end
 ```
@@ -82,13 +83,31 @@ Before any component, build one page (`references/lab.md`):
 look is found. Guessing values in code and reloading is how hours go. Keep
 the lab after launch: every later change to the material goes through it.
 
-### 4. The human tunes by eye
+### 4. Stop and ask for the tuned values
 
-Hand the lab over with an order to tune in (`references/lab.md`): shape,
-then edge band and thickness, then refraction, dispersion, frost, light,
-shadow. Judge on every background and in both themes. The human pastes the
-JSON back and it becomes the preset. Do not "improve" tuned values later
-without asking.
+This is a hard stop. Do not build components on the starting values. Hand
+the lab over and ask for the JSON, in words like these:
+
+> The glass lab is at `/lab/glass`. Tune it in this order: edge band and
+> thickness, then refraction, dispersion, frost, light angle, specular, rim,
+> shadow. Check every background and both themes. When it looks right, press
+> **Copy as JSON** and paste it here. If you want two looks (regular for text
+> panels, clear over rich media), tune and paste each one.
+
+Then wait. When the JSON arrives:
+
+1. Check it: every key of `GlassMaterial` present, numbers in range. Ask
+   about anything missing rather than filling it in.
+2. Write it as a named preset in one file (`regular`, `clear`), with the
+   date and the background it was judged on in a comment. That file is the
+   single source of truth.
+3. Point the lab's defaults at the preset, so the next tuning session starts
+   from the chosen look.
+4. Say back what was locked, in one short list.
+
+Only then go to step 5. Never "improve" tuned values later without asking:
+changes go through the lab and come back as JSON again. If the human
+explicitly says to skip tuning, use `MATERIALS.regular` and say so.
 
 ### 5. Build the components
 
@@ -97,7 +116,7 @@ Wire the renderer (React shown, the class is framework free):
 ```tsx
 const canvas = canvasRef.current!
 const stage = new GlassStage(canvas)
-stage.setMaterial(TUNED)            // the JSON from the lab
+stage.setMaterial(GLASS.regular)    // the preset locked from the lab's JSON
 await stage.setImage("/art/plate.avif", "/art/plate.webp")
 
 const frame = () => {

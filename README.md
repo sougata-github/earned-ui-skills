@@ -40,8 +40,9 @@ and the skill takes it through:
 2. The architecture (WebGL over owned media by default)
 3. A tuning lab before any component: your real background, your real
    content, and a live control for every property of the glass
-4. You tune by eye and copy the values as JSON. This step is what gets you
-   to the look you want, not better guesses in code
+4. You tune by eye, press Copy as JSON and paste it back. The agent stops
+   and waits for it, then locks it as your preset. This step is what gets
+   you to the look you want, not better guesses in code
 5. Components on the tuned material, content as real HTML
 6. A verification checklist
 

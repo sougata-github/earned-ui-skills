@@ -46,9 +46,22 @@ when they hold everywhere.
 
 ## Locking values
 
-The pasted JSON becomes a named preset (`regular`, `clear`) in one file, the
-single source of truth. Record the date and what it was judged on. Later
-changes go through the lab again, not straight into code.
+The human presses Copy as JSON and pastes it into the conversation. The
+agent waits for it, checks every key is present and in range, and writes it
+as a named preset in one file, the single source of truth:
+
+```ts
+// Tuned by eye in /lab/glass on 2026-11-21, judged on the ocean, clouds and
+// hills images in both themes. Change through the lab, not here.
+export const GLASS = {
+  regular: { bezel: 14, thickness: 46, ior: 1.2, /* ...every key */ },
+  clear: { /* ...a second paste, if tuned */ },
+} satisfies Record<string, GlassMaterial>
+```
+
+Then the lab's defaults point at the preset, so the next session starts from
+the chosen look. Later changes go through the lab again and come back as
+JSON, never straight into code.
 
 ## Recording the lab
 
