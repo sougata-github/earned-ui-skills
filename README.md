@@ -13,7 +13,6 @@ workflow to build its own.
 | Skill | What it builds | Status |
 | --- | --- | --- |
 | [`liquid-glass-web`](skills/liquid-glass-web/SKILL.md) | Apple style Liquid Glass on the web with real refraction (WebGL2), not a backdrop blur | Ready |
-| Widgets | Data widgets that read like native app widgets | Next |
 
 ## Install
 
