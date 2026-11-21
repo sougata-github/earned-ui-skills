@@ -140,7 +140,8 @@ new ResizeObserver(() => { stage.resize(); frame() }).observe(canvas)
   rect and `border-radius` become a shape (`measureShapes`). CSS stays the
   source of truth for layout.
 - Render on demand: on resize, scroll, image load and while something
-  animates. A still page draws nothing.
+  animates (including `stage.fading`, true while a new image cross-fades in
+  over the old one). A still page draws nothing.
 - Arrive by materializing: animate `setMaterialize` from 0 to 1 on a
   critically damped curve (`materializeCurve`), never by fading opacity.
 - Content on glass uses fills and vibrant, high contrast ink, never another

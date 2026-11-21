@@ -137,6 +137,12 @@ point. It is sampled with `textureLod` at the level that matches its scale
   Automatic mip selection reads that as minification and picks a blurry
   level, which smears exactly the edge that should be sharp.
 
+Changing the image cross-fades: `setImage` keeps the old texture and blends
+the new one in over `fadeMs` (600 by default, eased in and out), sampling
+both at their own scale. The glass refracts the blend, so the scene changes
+under it instead of cutting. The first image fades in over the background
+colour.
+
 ## 11. Materialize
 
 `uMaterialize` (0 to 1) scales refraction, dispersion, frost, tint, light

@@ -146,9 +146,12 @@ precision highp float;
 #define MAX_SHAPES ${MAX_SHAPES}
 #define MAX_INSETS ${MAX_INSETS}
 
-uniform sampler2D uImage;
+uniform sampler2D uImage;   // the current image
 uniform vec2 uImageSize;    // image px
-uniform float uImageMix;    // 0 background, 1 image (fades in once loaded)
+uniform sampler2D uPrev;    // the image it is fading in over
+uniform vec2 uPrevSize;
+uniform float uHasPrev;     // 0: fading in over the background colour
+uniform float uFade;        // 0 previous, 1 current
 uniform vec3 uBackground;
 uniform vec2 uFocus;        // point of the image kept in view, 0..1
 uniform vec2 uRes;          // canvas, device px
@@ -225,12 +228,20 @@ vec2 centreAt(vec2 p) {
 // that matches its scale, so a large image never shimmers when drawn small.
 // Always an explicit level: refraction makes neighbouring pixels read far
 // apart, and automatic mip selection then picks a blurry level at the edge.
-vec3 image(vec2 p, float extraLod) {
-  float s = max(uRes.x / uImageSize.x, uRes.y / uImageSize.y);
-  vec2 ip = (p - uRes * uFocus) / s + uImageSize * uFocus;
+vec3 cover(sampler2D tex, vec2 size, vec2 p, float extraLod) {
+  float s = max(uRes.x / size.x, uRes.y / size.y);
+  vec2 ip = (p - uRes * uFocus) / s + size * uFocus;
   float lod = max(log2(1.0 / s), 0.0) + extraLod;
-  vec3 c = textureLod(uImage, clamp(ip / uImageSize, 0.0, 1.0), lod).rgb;
-  return mix(uBackground, c, uImageMix);
+  return textureLod(tex, clamp(ip / size, 0.0, 1.0), lod).rgb;
+}
+
+// A new image cross-fades over the old one. The glass refracts the blend,
+// so it changes with the scene instead of cutting.
+vec3 image(vec2 p, float extraLod) {
+  vec3 current = cover(uImage, uImageSize, p, extraLod);
+  if (uFade >= 1.0) return current;
+  vec3 previous = uHasPrev > 0.5 ? cover(uPrev, uPrevSize, p, extraLod) : uBackground;
+  return mix(previous, current, uFade);
 }
 
 vec3 frosted(vec2 p) {
@@ -397,7 +408,10 @@ void main() {
 const UNIFORMS = [
   "uImage",
   "uImageSize",
-  "uImageMix",
+  "uPrev",
+  "uPrevSize",
+  "uHasPrev",
+  "uFade",
   "uBackground",
   "uFocus",
   "uRes",
@@ -452,8 +466,14 @@ export class GlassStage {
   private program: WebGLProgram
   private loc = {} as Record<Uniform, WebGLUniformLocation | null>
   private texture: WebGLTexture
+  private prevTexture: WebGLTexture
   private imageSize: [number, number] = [1, 1]
-  private imageMix = 0
+  private prevSize: [number, number] = [1, 1]
+  private hasImage = false
+  private hasPrev = false
+  private fadeFrom = 0
+  private fadeMs = 0
+  private loadToken = 0
   private focus: [number, number] = [0.5, 0.5]
   private dpr: number
   private material: GlassMaterial = { ...MATERIALS.regular }
@@ -488,30 +508,50 @@ export class GlassStage {
     // A vertex array must be bound to draw, even with no attributes.
     gl.bindVertexArray(gl.createVertexArray())
 
-    this.texture = gl.createTexture()!
-    gl.bindTexture(gl.TEXTURE_2D, this.texture)
-    gl.texImage2D(
-      gl.TEXTURE_2D,
-      0,
-      gl.RGBA,
-      1,
-      1,
-      0,
-      gl.RGBA,
-      gl.UNSIGNED_BYTE,
-      new Uint8Array([0, 0, 0, 255])
-    )
+    const blank = () => {
+      const texture = gl.createTexture()!
+      gl.bindTexture(gl.TEXTURE_2D, texture)
+      gl.texImage2D(
+        gl.TEXTURE_2D,
+        0,
+        gl.RGBA,
+        1,
+        1,
+        0,
+        gl.RGBA,
+        gl.UNSIGNED_BYTE,
+        new Uint8Array([0, 0, 0, 255])
+      )
+      return texture
+    }
+    this.texture = blank()
+    this.prevTexture = blank()
     this.resize()
   }
 
-  /** Loads the image under the glass. AVIF first, a fallback after. */
-  async setImage(src: string, fallbackSrc?: string): Promise<void> {
+  /** Loads the image under the glass, AVIF first, a fallback after, and
+   *  cross-fades it in over the current one (or the background colour) over
+   *  `fadeMs`. Keep rendering every frame while `fading` is true. Only the
+   *  latest call wins if several overlap. */
+  async setImage(
+    src: string,
+    fallbackSrc?: string,
+    fadeMs = 600
+  ): Promise<void> {
+    const token = ++this.loadToken
     const img = await loadImage(src).catch(() =>
       fallbackSrc ? loadImage(fallbackSrc) : Promise.reject()
     )
-    // The stage may have been disposed while the image loaded (an unmount).
-    if (this.disposed) return
+    // Disposed while it loaded (an unmount), or overtaken by a newer call.
+    if (this.disposed || token !== this.loadToken) return
     const gl = this.gl
+
+    // The current image becomes the one fading out. A fade cut short starts
+    // from where it is, close enough at these durations.
+    ;[this.texture, this.prevTexture] = [this.prevTexture, this.texture]
+    this.prevSize = this.imageSize
+    this.hasPrev = this.hasImage
+
     gl.bindTexture(gl.TEXTURE_2D, this.texture)
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false)
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img)
@@ -525,7 +565,22 @@ export class GlassStage {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
     this.imageSize = [img.naturalWidth, img.naturalHeight]
-    this.imageMix = 1
+    this.hasImage = true
+    this.fadeFrom = performance.now()
+    this.fadeMs = fadeMs
+  }
+
+  /** True while an image is fading in: render every frame until it ends. */
+  get fading(): boolean {
+    return this.fadeProgress() < 1
+  }
+
+  private fadeProgress(): number {
+    if (!this.hasImage) return 0
+    if (this.fadeMs <= 0) return 1
+    const t = Math.min(1, (performance.now() - this.fadeFrom) / this.fadeMs)
+    // Ease in and out, so the change has no hard start or stop.
+    return t * t * (3 - 2 * t)
   }
 
   /** Point of the image kept in view as it is cropped, 0..1. */
@@ -583,7 +638,12 @@ export class GlassStage {
     gl.bindTexture(gl.TEXTURE_2D, this.texture)
     gl.uniform1i(l.uImage, 0)
     gl.uniform2f(l.uImageSize, this.imageSize[0], this.imageSize[1])
-    gl.uniform1f(l.uImageMix, this.imageMix)
+    gl.activeTexture(gl.TEXTURE1)
+    gl.bindTexture(gl.TEXTURE_2D, this.prevTexture)
+    gl.uniform1i(l.uPrev, 1)
+    gl.uniform2f(l.uPrevSize, this.prevSize[0], this.prevSize[1])
+    gl.uniform1f(l.uHasPrev, this.hasPrev ? 1 : 0)
+    gl.uniform1f(l.uFade, this.fadeProgress())
     gl.uniform3fv(l.uBackground, this.background)
     gl.uniform2f(l.uFocus, this.focus[0], this.focus[1])
     gl.uniform2f(l.uRes, this.canvas.width, this.canvas.height)
@@ -642,6 +702,7 @@ export class GlassStage {
   dispose() {
     this.disposed = true
     this.gl.deleteTexture(this.texture)
+    this.gl.deleteTexture(this.prevTexture)
     this.gl.deleteProgram(this.program)
   }
 }
