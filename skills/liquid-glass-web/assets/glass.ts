@@ -64,6 +64,31 @@ export type GlassShape = {
   /** Corner radius, CSS px. Clamped to half the shorter side, so a large
    *  value gives a pill or a circle. */
   radius: number
+  /** Glass on glass: a small shape sitting on a panel. It refracts the
+   *  panel as drawn (its frost, tint and light), not the bare image, and
+   *  casts its shadow on it. measureShapes sets it for elements marked
+   *  `data-glass-inset`. */
+  inset?: boolean
+}
+
+/** The material of insets (glass on glass). They add no frost, dim or tint
+ *  of their own: the panel under them already has it. */
+export type InsetMaterial = {
+  /** Edge band, CSS px. Half the inset's size makes a full dome (a marble). */
+  bezel: number
+  thickness: number
+  /** Above 1 enlarges the panel seen through it, like a lens. */
+  magnify: number
+  /** Rim and specular, as a share of the panels'. Small glass glares
+   *  easily, so keep it under 1. */
+  light: number
+}
+
+export const INSET: InsetMaterial = {
+  bezel: 18,
+  thickness: 56,
+  magnify: 1.12,
+  light: 0.45,
 }
 
 // Two starting points. Tune from here in a lab with live controls, by eye,
@@ -106,6 +131,7 @@ export const MATERIALS = {
 } satisfies Record<string, GlassMaterial>
 
 export const MAX_SHAPES = 8
+export const MAX_INSETS = 4
 
 const VERTEX = /* glsl */ `#version 300 es
 void main() {
@@ -118,6 +144,7 @@ void main() {
 const FRAGMENT = /* glsl */ `#version 300 es
 precision highp float;
 #define MAX_SHAPES ${MAX_SHAPES}
+#define MAX_INSETS ${MAX_INSETS}
 
 uniform sampler2D uImage;
 uniform vec2 uImageSize;    // image px
@@ -145,6 +172,14 @@ uniform float uSpecular;
 uniform float uShadow;
 uniform vec2 uLight;        // unit vector toward the light, y down
 uniform float uMaterialize; // 0..1: glass arrives by ramping its optics
+
+uniform vec4 uInsets[MAX_INSETS]; // glass on glass, same layout as uShapes
+uniform float uInsetRadii[MAX_INSETS];
+uniform int uInsetCount;
+uniform float uInsetBezel;
+uniform float uInsetThickness;
+uniform float uInsetMagnify;
+uniform float uInsetLight;
 
 out vec4 outColor;
 
@@ -229,22 +264,35 @@ float slopeAt(float x) {
   return (heightAt(min(x + e, 1.0)) - heightAt(max(x - e, 0.0))) / (2.0 * e);
 }
 
-// Where a ray looking straight down lands after bending through the slab.
-vec2 refractOffset(vec2 grad, float x, float ior) {
-  float slope = min(slopeAt(x), 24.0) * uThickness / uBezel;
+// Where a ray looking straight down lands after bending through a slab of
+// the given thickness and edge band.
+vec2 refractThrough(vec2 grad, float x, float ior, float thickness, float bezel) {
+  float slope = min(slopeAt(x), 24.0) * thickness / bezel;
   vec3 n = normalize(vec3(grad * slope, 1.0));
   vec3 r = refract(vec3(0.0, 0.0, -1.0), n, 1.0 / ior);
-  float depth = heightAt(x) * uThickness + uThickness * 0.35;
+  float depth = heightAt(x) * thickness + thickness * 0.35;
   return r.xy * depth / max(-r.z, 0.05);
 }
 
-void main() {
-  vec2 p = vec2(gl_FragCoord.x, uRes.y - gl_FragCoord.y);
+vec2 refractOffset(vec2 grad, float x, float ior) {
+  return refractThrough(grad, x, ior, uThickness, uBezel);
+}
+
+// Light on the silhouette: rim, lit side specular, counter highlight and a
+// hairline. strength scales rim and specular (insets glare more easily).
+vec3 edgeLight(vec2 grad, float x, float d, float strength) {
+  float rimBand = pow(1.0 - x, 3.0);
+  float lit = max(dot(-grad, -uLight), 0.0);
+  float counter = max(dot(-grad, uLight), 0.0);
+  float spec = pow(lit, 4.0) * pow(1.0 - x, 5.0) + 0.45 * pow(counter, 6.0) * pow(1.0 - x, 7.0);
+  float hairline = (1.0 - smoothstep(0.0, 1.6, abs(d))) * (0.35 + 0.65 * lit);
+  return vec3(1.0) * (rimBand * uRim * 0.25 + spec * uSpecular + hairline * uSpecular * 0.5) * strength;
+}
+
+// The image with every panel drawn on it, at any point.
+vec3 panelAt(vec2 p) {
   vec3 base = image(p, 0.0);
-  if (uCount == 0) {
-    outColor = vec4(base, 1.0);
-    return;
-  }
+  if (uCount == 0) return base;
 
   float m = uMaterialize;
   float d = field(p);
@@ -255,10 +303,7 @@ void main() {
   float shadow = exp(-max(ds, 0.0) / soft) * step(0.0, d);
   base *= 1.0 - uShadow * m * shadow;
 
-  if (d > 1.0) {
-    outColor = vec4(base, 1.0);
-    return;
-  }
+  if (d > 1.0) return base;
 
   vec2 e = vec2(1.0, 0.0);
   vec2 grad = normalize(vec2(field(p + e.xy) - field(p - e.xy), field(p + e.yx) - field(p - e.yx)) + 1e-6);
@@ -281,15 +326,71 @@ void main() {
   glass = mix(glass, uTintColor, uTint * m);
 
   // Light defines the silhouette.
-  float rimBand = pow(1.0 - x, 3.0);
-  float lit = max(dot(-grad, -uLight), 0.0);
-  float counter = max(dot(-grad, uLight), 0.0);
-  float spec = pow(lit, 4.0) * pow(1.0 - x, 5.0) + 0.45 * pow(counter, 6.0) * pow(1.0 - x, 7.0);
-  float hairline = (1.0 - smoothstep(0.0, 1.6, abs(d))) * (0.35 + 0.65 * lit);
-  glass += vec3(1.0) * (rimBand * uRim * 0.25 + spec * uSpecular + hairline * uSpecular * 0.5) * m;
+  glass += edgeLight(grad, x, d, 1.0) * m;
 
   float mask = 1.0 - smoothstep(-0.75, 0.75, d);
-  outColor = vec4(mix(base, glass, mask), 1.0);
+  return mix(base, glass, mask);
+}
+
+float insetField(vec2 p, vec4 rect, float radius) {
+  return sdRoundBox(p - rect.xy, rect.zw, radius);
+}
+
+void main() {
+  vec2 p = vec2(gl_FragCoord.x, uRes.y - gl_FragCoord.y);
+  if (uInsetCount == 0) {
+    outColor = vec4(panelAt(p), 1.0);
+    return;
+  }
+
+  // Glass on glass: the inset nearest this pixel (insets never overlap).
+  float dl = 1e6;
+  vec4 rect = vec4(0.0);
+  float radius = 0.0;
+  for (int i = 0; i < MAX_INSETS; i++) {
+    if (i >= uInsetCount) break;
+    float di = insetField(p, uInsets[i], uInsetRadii[i]);
+    if (di < dl) {
+      dl = di;
+      rect = uInsets[i];
+      radius = uInsetRadii[i];
+    }
+  }
+
+  float m = uMaterialize;
+  vec3 under = panelAt(p);
+
+  // The inset's shadow falls on the panel under it.
+  float soft = uInsetBezel * 1.4 + uInsetThickness * 0.3;
+  float ds = insetField(p - vec2(0.0, soft * 0.45), rect, radius);
+  under *= 1.0 - uShadow * m * exp(-max(ds, 0.0) / soft) * step(0.0, dl);
+
+  if (dl > 1.0) {
+    outColor = vec4(under, 1.0);
+    return;
+  }
+
+  vec2 e = vec2(1.0, 0.0);
+  vec2 grad = normalize(vec2(
+    insetField(p + e.xy, rect, radius) - insetField(p - e.xy, rect, radius),
+    insetField(p + e.yx, rect, radius) - insetField(p - e.yx, rect, radius)
+  ) + 1e-6);
+  float x = clamp(-dl / uInsetBezel, 0.0, 1.0);
+  vec2 q = rect.xy + (p - rect.xy) / mix(1.0, uInsetMagnify, m);
+
+  // It bends the panel as drawn, not the bare image.
+  vec3 glass;
+  if (x >= 1.0) {
+    glass = panelAt(q);
+  } else {
+    glass.r = panelAt(q + refractThrough(grad, x, uIor - uDispersion, uInsetThickness, uInsetBezel) * m).r;
+    glass.g = panelAt(q + refractThrough(grad, x, uIor, uInsetThickness, uInsetBezel) * m).g;
+    glass.b = panelAt(q + refractThrough(grad, x, uIor + uDispersion, uInsetThickness, uInsetBezel) * m).b;
+  }
+  glass += edgeLight(grad, x, dl, uInsetLight) * m;
+
+  float mask = 1.0 - smoothstep(-0.75, 0.75, dl);
+  outColor = vec4(mix(under, glass, mask), 1.0);
 }
 `
 
@@ -318,6 +419,13 @@ const UNIFORMS = [
   "uShadow",
   "uLight",
   "uMaterialize",
+  "uInsets",
+  "uInsetRadii",
+  "uInsetCount",
+  "uInsetBezel",
+  "uInsetThickness",
+  "uInsetMagnify",
+  "uInsetLight",
 ] as const
 
 type Uniform = (typeof UNIFORMS)[number]
@@ -350,6 +458,8 @@ export class GlassStage {
   private dpr: number
   private material: GlassMaterial = { ...MATERIALS.regular }
   private shapes: GlassShape[] = []
+  private insets: GlassShape[] = []
+  private insetMaterial: InsetMaterial = { ...INSET }
   private materialize = 1
   private background: [number, number, number]
   private disposed = false
@@ -431,9 +541,15 @@ export class GlassStage {
     return { ...this.material }
   }
 
-  /** Up to MAX_SHAPES rounded rects, CSS px relative to the canvas. */
+  /** Rounded rects, CSS px relative to the canvas: up to MAX_SHAPES panels
+   *  and up to MAX_INSETS insets (shapes with `inset: true`). */
   setShapes(shapes: GlassShape[]) {
-    this.shapes = shapes.slice(0, MAX_SHAPES)
+    this.shapes = shapes.filter((s) => !s.inset).slice(0, MAX_SHAPES)
+    this.insets = shapes.filter((s) => s.inset).slice(0, MAX_INSETS)
+  }
+
+  setInsetMaterial(material: Partial<InsetMaterial>) {
+    this.insetMaterial = { ...this.insetMaterial, ...material }
   }
 
   /** 0 bare image, 1 full glass. Animate it to make glass arrive or leave
@@ -472,18 +588,32 @@ export class GlassStage {
     gl.uniform2f(l.uFocus, this.focus[0], this.focus[1])
     gl.uniform2f(l.uRes, this.canvas.width, this.canvas.height)
 
-    const rects = new Float32Array(MAX_SHAPES * 4)
-    const radii = new Float32Array(MAX_SHAPES)
-    this.shapes.forEach((s, i) => {
-      rects[i * 4] = (s.x + s.width / 2) * d
-      rects[i * 4 + 1] = (s.y + s.height / 2) * d
-      rects[i * 4 + 2] = (s.width / 2) * d
-      rects[i * 4 + 3] = (s.height / 2) * d
-      radii[i] = s.radius * d
-    })
-    gl.uniform4fv(l.uShapes, rects)
-    gl.uniform1fv(l.uRadii, radii)
+    const pack = (shapes: GlassShape[], max: number) => {
+      const rects = new Float32Array(max * 4)
+      const radii = new Float32Array(max)
+      shapes.forEach((s, i) => {
+        rects[i * 4] = (s.x + s.width / 2) * d
+        rects[i * 4 + 1] = (s.y + s.height / 2) * d
+        rects[i * 4 + 2] = (s.width / 2) * d
+        rects[i * 4 + 3] = (s.height / 2) * d
+        radii[i] = s.radius * d
+      })
+      return { rects, radii }
+    }
+    const panels = pack(this.shapes, MAX_SHAPES)
+    gl.uniform4fv(l.uShapes, panels.rects)
+    gl.uniform1fv(l.uRadii, panels.radii)
     gl.uniform1i(l.uCount, this.shapes.length)
+
+    const insets = pack(this.insets, MAX_INSETS)
+    const im = this.insetMaterial
+    gl.uniform4fv(l.uInsets, insets.rects)
+    gl.uniform1fv(l.uInsetRadii, insets.radii)
+    gl.uniform1i(l.uInsetCount, this.insets.length)
+    gl.uniform1f(l.uInsetBezel, Math.max(im.bezel, 1) * d)
+    gl.uniform1f(l.uInsetThickness, im.thickness * d)
+    gl.uniform1f(l.uInsetMagnify, im.magnify)
+    gl.uniform1f(l.uInsetLight, im.light)
 
     gl.uniform1f(l.uBlend, m.blend * d)
     gl.uniform1f(l.uBezel, Math.max(m.bezel, 1) * d)
@@ -524,7 +654,8 @@ export function materializeCurve(t: number, duration = 900) {
 }
 
 /** Measures elements as shapes relative to the canvas. Radius comes from
- *  each element's own border-radius, so CSS stays the source of truth. */
+ *  each element's own border-radius, so CSS stays the source of truth.
+ *  Elements marked `data-glass-inset` become insets (glass on glass). */
 export function measureShapes(
   canvas: HTMLElement,
   elements: (HTMLElement | null)[]
@@ -545,6 +676,7 @@ export function measureShapes(
         width: r.width,
         height: r.height,
         radius: radius * scale,
+        inset: el.hasAttribute("data-glass-inset"),
       }
     })
 }

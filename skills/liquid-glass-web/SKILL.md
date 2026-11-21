@@ -144,7 +144,9 @@ new ResizeObserver(() => { stage.resize(); frame() }).observe(canvas)
 - Arrive by materializing: animate `setMaterialize` from 0 to 1 on a
   critically damped curve (`materializeCurve`), never by fading opacity.
 - Content on glass uses fills and vibrant, high contrast ink, never another
-  glass layer (`references/apple-rules.md`).
+  glass layer (`references/apple-rules.md`). The one exception: a small
+  inset that bends the panel under it (a send button, a round album cover).
+  Mark it `data-glass-inset` (`references/optics.md`, glass on glass).
 
 ### 6. Verify
 
@@ -189,7 +191,8 @@ Full notes and sources: `references/apple-rules.md`.
 
 - Glass is the functional layer floating over content (controls, bars,
   widgets on art), not the content itself. Use it sparingly.
-- Never glass on glass. Things on glass are fills, ink and vibrancy.
+- Never glass on glass. Things on glass are fills, ink and vibrancy. The
+  exception: small insets that refract the panel they sit on.
 - Regular (frosted) for text heavy panels, clear only over rich media with
   bold content and a dimming layer.
 - Bigger glass reads thicker: deeper shadow, stronger lensing.
@@ -236,7 +239,8 @@ Each one is a real failure and its fix. Details: `references/lessons.md`.
 
 ## Files
 
-- `assets/glass.ts`: the renderer. WebGL2, no dependencies, up to 8 shapes,
+- `assets/glass.ts`: the renderer. WebGL2, no dependencies, up to 8 panels
+  and 4 glass on glass insets,
   smooth union, explicit mip sampling, materialize.
 - `assets/GlassLab.tsx`: the tuning lab, React, inline styles.
 - `references/lab.md`: building and running a tuning session.

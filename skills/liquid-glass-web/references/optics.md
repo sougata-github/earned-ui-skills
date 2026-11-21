@@ -16,7 +16,8 @@ extended without guessing.
 9. Melting shapes: smooth union
 10. Sampling the image
 11. Materialize
-12. Extensions
+12. Glass on glass: insets
+13. Extensions
 
 ## 1. Coordinates
 
@@ -143,7 +144,30 @@ and shadow together. At 0 the shape is invisible, the bare image. Animating
 it from 0 to 1 on a critically damped curve is how glass arrives: the optics
 form, nothing fades.
 
-## 12. Extensions
+## 12. Glass on glass: insets
+
+Apple's rule is never glass on glass. The one exception that reads right is
+a small piece of glass sitting on a panel and bending it: a field and a send
+button on a glass form, a round album cover on a glass player.
+
+The renderer draws these as insets. Mark the element `data-glass-inset`
+(or pass `inset: true` in a shape). Up to `MAX_INSETS` per canvas.
+
+- An inset refracts **the panel as drawn**, frost, tint and light included,
+  not the bare image. The shader evaluates the whole panel at the bent
+  sample point (`panelAt`), once per colour channel at the edge.
+- It adds no frost, dim or tint of its own: the panel under it has them.
+- It casts its own soft shadow on the panel.
+- Its material is separate (`setInsetMaterial`): an edge band near half its
+  size gives a full dome, a marble. `magnify` above 1 makes it a lens.
+  `light` scales its rim and specular, about 0.45 of the panels', because
+  small glass glares easily.
+- Insets never overlap each other, so each pixel takes the nearest one.
+
+Cost: inside an inset the panel is evaluated three times per pixel. Keep
+insets small.
+
+## 13. Extensions
 
 These were built on the same shader in production. Each is a contained
 change:
@@ -153,10 +177,6 @@ change:
   field, convex corners rounded), upload it as a texture and use it as the
   shape's distance. Scale the edge band and the field's smoothing with the
   type size, or the gaps between glyphs close up at small sizes.
-- **Glass on glass insets** (fields and a button on a glass form): an inset
-  refracts the panel as drawn (its frost, tint and light), not the bare
-  image, and casts its shadow on it. Give insets a softer rim (about 0.45 of
-  the panel's) so their edges read without glaring.
 - **Per shape light:** pass a light strength per shape when small controls
   need less rim than a large panel.
 - **Ink tone from the image:** read the image's luminance under each panel
