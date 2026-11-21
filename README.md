@@ -38,8 +38,10 @@ and the skill takes it through:
 
 1. What sits behind the glass, and two references to judge against
 2. The architecture (WebGL over owned media by default)
-3. A tuning lab with a slider for every property, before any component
-4. Tuning by eye, values back as JSON
+3. A tuning lab before any component: your real background, your real
+   content, and a live control for every property of the glass
+4. You tune by eye and copy the values as JSON. This step is what gets you
+   to the look you want, not better guesses in code
 5. Components on the tuned material, content as real HTML
 6. A verification checklist
 

@@ -18,6 +18,19 @@ Glass. Apple defines the new material by lensing: the edge of the glass
 refracts what is behind it, and light catches the rim. If the result has no
 refraction at the edge, it is not done.
 
+## The lab is the method
+
+The fastest way to the look the human wants is not better guesses in code.
+It is a lab: one page with the real background, the real component and a
+live control for every property of the glass, where the human drags until it
+looks right and copies the values out. Glass is judged by eye, and no
+description of "a bit thicker, less rim, softer light" survives the round
+trip through code and reloads. A lab turns hours of back and forth into one
+sitting.
+
+So the agent never tunes the material blind. It builds the lab, hands it
+over, and builds components only on values the human chose.
+
 ## Workflow
 
 Copy this checklist into the response and work through it in order:
@@ -66,7 +79,8 @@ Before any component, build one page (`references/lab.md`):
 - a **Copy as JSON** button
 
 `assets/GlassLab.tsx` is a working starting point. The lab is where the
-look is found. Guessing values in code and reloading is how hours go.
+look is found. Guessing values in code and reloading is how hours go. Keep
+the lab after launch: every later change to the material goes through it.
 
 ### 4. The human tunes by eye
 
