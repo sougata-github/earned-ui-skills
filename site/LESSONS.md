@@ -70,6 +70,10 @@ wrong on screen, and what fixed it.
   only move and fade need none.
 - **A full window from the first frame.** A message list starts full and
   scrolls. It never starts empty and fills from the bottom.
+- **A row leaves inside its list.** A card that glides a full slot past the
+  end of its list while it fades shows up as a flash over whatever is
+  there. Let it step a few pixels, fade faster than it moves, and sit
+  behind the row taking its place.
 - **Moving text keeps its own layer.** A row of text that glides gets a
   layer for the move, and when the move ends the browser redraws the words
   on the pixel grid, so they shift by a fraction of a pixel each time.

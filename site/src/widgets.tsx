@@ -598,13 +598,20 @@ export function Voice({ step }: WidgetProps) {
 
 const CHAT_ROWS = 5
 const CHAT_SLOT = 42
+/** How far past the list's edge a row waits or leaves, px, and how fast a
+ *  leaving row fades, ms. Short and quick, so it is gone before it reaches
+ *  anything beside the list. */
+const EDGE = 12
+const LEAVE = 220
 
 export function Chat({ step }: WidgetProps) {
   const n = CHAT.length
   const message = (k: number) => CHAT[((k % n) + n) % n]
-  // One above and one below the window stay mounted, unseen, so a line
-  // glides in from where it already is. Each row is `moving-text`: it keeps
-  // its own layer for good, so its words never shift as a glide ends.
+  // One above and one below the window stay mounted, unseen. A line arrives
+  // from just under the last row and leaves just over the first, a short
+  // step and a quick fade, so it never crosses the header or the typing row
+  // on its way. Each row is `moving-text`: it keeps its own layer for good,
+  // so its words never shift as a glide ends.
   const keys = Array.from({ length: CHAT_ROWS + 2 }, (_, o) => step - 1 + o)
   const typing = message(step + CHAT_ROWS).who
   return (
@@ -624,7 +631,13 @@ export function Chat({ step }: WidgetProps) {
             <div
               key={k}
               className={`moving-text absolute inset-x-0 top-0 flex h-[34px] items-center gap-2 transition-[transform,opacity] ${GLIDE} ${mine ? "flex-row-reverse" : ""}`}
-              style={{ transform: `translateY(${slot * CHAT_SLOT}px)`, opacity: seen ? 1 : 0 }}
+              style={{
+                transform: `translateY(${slot < 0 ? -EDGE : slot < CHAT_ROWS ? slot * CHAT_SLOT : (CHAT_ROWS - 1) * CHAT_SLOT + EDGE}px)`,
+                opacity: seen ? 1 : 0,
+                zIndex: seen ? 1 : 0,
+                // transform, opacity: a row that leaves fades faster than it moves.
+                transitionDuration: seen ? undefined : `600ms, ${LEAVE}ms`,
+              }}
             >
               {!mine && <Avatar who={m.who} size="size-6 text-[10px]" />}
               <p
@@ -862,7 +875,9 @@ const NOTE_LOOK = {
 
 export function Notifications({ step }: WidgetProps) {
   const n = NOTIFICATIONS.length
-  // Newest first. One waits above, unseen, and one fades out below.
+  // Newest first. One waits just above, unseen, and the oldest dips a few
+  // pixels under the last card and is gone, behind the card taking its
+  // place. It never travels past the list.
   const keys = [1, 0, -1, -2, -3].map((o) => step + o)
   return (
     <div className="flex h-full flex-col justify-between">
@@ -884,8 +899,10 @@ export function Notifications({ step }: WidgetProps) {
               key={k}
               className={`absolute inset-x-0 top-0 flex h-[54px] items-center gap-2.5 rounded-[10px] pr-3 pl-2.5 transition-[transform,opacity] ${GLIDE} ${CARD} moving-text`}
               style={{
-                transform: `translateY(${slot * NOTE_SLOT}px) scale(${slot < 0 ? 0.96 : 1})`,
+                transform: `translateY(${slot < 0 ? -EDGE : slot < 3 ? slot * NOTE_SLOT : 2 * NOTE_SLOT + EDGE}px) scale(${seen ? 1 : 0.96})`,
                 opacity: seen ? [1, 0.8, 0.55][slot] : 0,
+                zIndex: seen ? 1 : 0,
+                transitionDuration: seen ? undefined : `600ms, ${LEAVE}ms`,
               }}
             >
               <span className={`grid size-[34px] shrink-0 place-items-center rounded-[8px] ${look.tone}`}>
