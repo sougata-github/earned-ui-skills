@@ -3,11 +3,11 @@ import { AnimatePresence, motion } from "motion/react"
 import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react"
 import {
   Add01Icon,
+  ArrowBigUpDashIcon,
   ArrowLeft01Icon,
   ArrowRight01Icon,
   Calendar03Icon,
   Cancel01Icon,
-  CloudUploadIcon,
   CodeIcon,
   CreditCardIcon,
   GitBranchIcon,
@@ -54,7 +54,8 @@ import {
 // launch itself, violet is files and search, amber is praise.
 //
 // State changes are explicit and smooth: digits turn like an odometer, text
-// crossfades through a blur, rows glide to their new slot.
+// crossfades (a 2px blur only where the old and new text overlap), rows
+// glide to their new slot.
 
 export type WidgetProps = { step: number }
 
@@ -111,7 +112,8 @@ function Digits({ value }: { value: string | number }) {
   )
 }
 
-/** Text that crossfades to its new value through a short blur. */
+/** Text that crossfades to its new value. The trace of blur keeps the two
+ *  texts from reading as two objects while they overlap. */
 function Swap({ value, className = "" }: { value: string; className?: string }) {
   return (
     <span className={`relative inline-flex ${className}`}>
@@ -119,10 +121,10 @@ function Swap({ value, className = "" }: { value: string; className?: string }) 
         <motion.span
           key={value}
           className="whitespace-nowrap"
-          initial={{ opacity: 0, y: "0.45em", filter: "blur(4px)" }}
+          initial={{ opacity: 0, y: "0.35em", filter: "blur(2px)" }}
           animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-          exit={{ opacity: 0, y: "-0.45em", filter: "blur(4px)" }}
-          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+          exit={{ opacity: 0, y: "-0.35em", filter: "blur(2px)" }}
+          transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
         >
           {value}
         </motion.span>
@@ -261,8 +263,8 @@ export function Calendar({ step }: WidgetProps) {
         <Swap
           value={
             launch
-              ? `${PRODUCT.name} ${PRODUCT.version} launch, Tue 9:00 AM`
-              : "Dry run, Mon 4:00 PM"
+              ? `${PRODUCT.name} ${PRODUCT.version} launch, 9:00 AM`
+              : "Dry run, 4:00 PM"
           }
         />
       </div>
@@ -332,7 +334,7 @@ export function Search({ step }: WidgetProps) {
         )}
       </span>
       <span
-        className={`grid h-8 place-items-center rounded-full bg-violet px-3 text-[11px] leading-none font-semibold text-on-dark transition-[opacity,scale,filter] ${GLIDE} ${found ? "" : "scale-90 opacity-0 blur-[3px]"}`}
+        className={`grid h-8 place-items-center rounded-full bg-violet px-3 text-[11px] leading-none font-semibold text-on-dark transition-[opacity,scale] ${GLIDE} ${found ? "" : "scale-95 opacity-0"}`}
       >
         3 results
       </span>
@@ -483,7 +485,7 @@ export function Upload({ step }: WidgetProps) {
         className={`grid size-9 place-items-center rounded-[10px] transition-colors ${GLIDE} ${done ? "bg-green/16 text-green-ink" : "bg-violet/14 text-violet-ink"}`}
       >
         <span key={String(done)} className="pop grid place-items-center">
-          <Icon icon={done ? Tick02Icon : CloudUploadIcon} className="size-[18px]" stroke={done ? 3 : 2} />
+          <Icon icon={done ? Tick02Icon : ArrowBigUpDashIcon} className="size-[18px]" stroke={done ? 3 : 2} />
         </span>
       </span>
       <div className="flex flex-col gap-2">
@@ -541,9 +543,10 @@ export function Invoice({ step }: WidgetProps) {
         <span
           className={`flex h-10 items-center justify-center gap-2 rounded-full transition-colors ${GLIDE} ${s === 2 ? "bg-green text-ink-fixed" : "bg-ink text-canvas"}`}
         >
-          {s > 0 && (
-            <span key={s} className="pop grid place-items-center">
-              {s === 1 ? <Spinner /> : <Icon icon={Tick02Icon} className="size-4" stroke={3} />}
+          {/* Sent is said once, by the word and the colour. No tick as well. */}
+          {s === 1 && (
+            <span className="pop grid place-items-center">
+              <Spinner />
             </span>
           )}
           <Swap value={["Send", "Sending", "Sent"][s]} />
@@ -553,7 +556,7 @@ export function Invoice({ step }: WidgetProps) {
   )
 }
 
-const WAVE = [5, 9, 14, 8, 18, 12, 22, 16, 10, 20, 14, 8, 16, 24, 12, 18, 10, 14, 20, 8, 12, 16, 10, 6, 12, 8]
+const WAVE = [5, 9, 14, 8, 18, 12, 22, 16, 10, 20, 14, 8, 16, 24, 12, 18, 10, 14, 20, 8, 12, 16, 10, 6]
 
 function Wave({ tone }: { tone: string }) {
   return (
@@ -610,7 +613,8 @@ export function Chat({ step }: WidgetProps) {
   const n = CHAT.length
   const message = (k: number) => CHAT[((k % n) + n) % n]
   // One above and one below the window stay mounted, unseen, so a line
-  // glides in from where it already is.
+  // glides in from where it already is. Each row is `moving-text`: it keeps
+  // its own layer, so its words never shift as a glide starts or ends.
   const keys = Array.from({ length: CHAT_ROWS + 2 }, (_, o) => step - 1 + o)
   const typing = message(step + CHAT_ROWS).who
   return (
@@ -631,12 +635,8 @@ export function Chat({ step }: WidgetProps) {
           return (
             <div
               key={k}
-              className={`absolute inset-x-0 top-0 flex h-[34px] items-center gap-2 transition-[transform,opacity,filter] ${GLIDE} ${mine ? "flex-row-reverse" : ""}`}
-              style={{
-                transform: `translateY(${slot * CHAT_SLOT}px)`,
-                opacity: seen ? 1 : 0,
-                filter: seen ? "blur(0px)" : "blur(4px)",
-              }}
+              className={`moving-text absolute inset-x-0 top-0 flex h-[34px] items-center gap-2 transition-[transform,opacity] ${GLIDE} ${mine ? "flex-row-reverse" : ""}`}
+              style={{ transform: `translateY(${slot * CHAT_SLOT}px)`, opacity: seen ? 1 : 0 }}
             >
               {!mine && <Avatar who={m.who} size="size-6 text-[10px]" />}
               <p
@@ -899,11 +899,10 @@ export function Notifications({ step }: WidgetProps) {
           return (
             <div
               key={k}
-              className={`absolute inset-x-0 top-0 flex h-[54px] items-center gap-2.5 rounded-[10px] pr-3 pl-2.5 transition-[transform,opacity,filter] ${GLIDE} ${CARD}`}
+              className={`absolute inset-x-0 top-0 flex h-[54px] items-center gap-2.5 rounded-[10px] pr-3 pl-2.5 transition-[transform,opacity] ${GLIDE} ${CARD} moving-text`}
               style={{
-                transform: `translateY(${slot * NOTE_SLOT}px) scale(${slot < 0 ? 0.94 : 1})`,
+                transform: `translateY(${slot * NOTE_SLOT}px) scale(${slot < 0 ? 0.96 : 1})`,
                 opacity: seen ? [1, 0.8, 0.55][slot] : 0,
-                filter: seen ? "blur(0px)" : "blur(4px)",
               }}
             >
               <span className={`grid size-[34px] shrink-0 place-items-center rounded-[8px] ${look.tone}`}>

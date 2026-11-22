@@ -89,6 +89,10 @@
   --color-rose-ink: var(--rose-ink);
 }
 
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
 html,
 body {
   margin: 0;
@@ -101,23 +105,25 @@ body {
 /* ------------------------------------------------------------ the opening */
 
 /* Nothing but the words at first. They come into focus quietly, the second
-   word a beat after the first, hold, then recede as the wall lands in front
-   of them. Small moves: a soft blur and a few percent of scale. */
+   word a beat after the first, and hold. The exit is quieter than the
+   entrance and shorter: a plain fade, with 1.5% of scale and a trace of
+   blur, done before the wall arrives. Blur here is never an effect, only
+   what keeps a fade from reading as a cut. */
 .title-word {
   display: inline-block;
   opacity: 0;
-  transform: translateY(0.05em) scale(0.985);
-  filter: blur(6px);
+  transform: translateY(0.04em) scale(0.99);
+  filter: blur(3px);
   transition:
-    opacity 1100ms var(--ease-out-quint),
-    transform 1300ms var(--ease-out-quint),
-    filter 1100ms var(--ease-out-quint);
+    opacity 900ms var(--ease-out-quint),
+    transform 1100ms var(--ease-out-quint),
+    filter 900ms var(--ease-out-quint);
 }
 .title {
   transition:
-    opacity 600ms cubic-bezier(0.4, 0, 0.2, 1),
-    transform 700ms cubic-bezier(0.4, 0, 0.2, 1),
-    filter 600ms cubic-bezier(0.4, 0, 0.2, 1);
+    opacity 500ms ease,
+    transform 600ms ease,
+    filter 500ms ease;
 }
 [data-phase="title"] .title-word,
 [data-phase="out"] .title-word {
@@ -132,8 +138,8 @@ body {
 [data-phase="wall"] .title,
 [data-phase="live"] .title {
   opacity: 0;
-  transform: scale(0.96);
-  filter: blur(6px);
+  transform: scale(0.985);
+  filter: blur(2px);
 }
 [data-phase="blank"] .title,
 [data-phase="blank"] .title-word {
@@ -174,10 +180,18 @@ body {
   display: block;
 }
 
+/* Text that glides (a chat line, a notification). Without a layer of its
+   own, the browser gives it one as the move starts and takes it away as it
+   ends, and the words shift by a fraction of a pixel each time. Keep the
+   layer for these rows only, never for everything. */
+.moving-text {
+  backface-visibility: hidden;
+}
+
 /* A mark that pops in when its state arrives. */
 @keyframes pop {
   from {
-    transform: scale(0.5);
+    transform: scale(0.8);
     opacity: 0;
   }
   to {

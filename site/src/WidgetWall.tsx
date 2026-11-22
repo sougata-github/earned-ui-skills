@@ -7,126 +7,224 @@ import type { WidgetProps } from "./widgets"
 //
 //   1. Blank: nothing but the canvas.
 //   2. Title: "Launch Day" comes quietly into focus at the centre, holds,
-//      then recedes.
+//      then fades.
 //   3. Land: the wall arrives the way a home screen does on unlock. Every
 //      tile starts enlarged and pushed out from the centre, past the edges
 //      of the screen, and flies in to its place, the centre first and the
 //      corners a moment later. One gesture, a long soft settle.
-//   4. Live: the wall rests as one composed screen and a conductor wakes two
-//      widgets every beat, in a fixed order, never two neighbours.
+//   4. Live: the wall rests and a conductor wakes two widgets every beat, in
+//      a fixed order.
 //
-// The wall is a fixed 1440 x 810 stage, zoomed to fit the window, so the
-// composed screen is exact at any size. There is one set of tiles, laid out
-// once: the entrance is a transform on each, so nothing reflows. Nothing is
-// random: sizes, delays and the order are fixed.
+// Responsive by arrangement, never by squeezing. Every tile is designed at a
+// fixed height and for a narrow range of widths, so a smaller screen gets
+// the same tiles in fewer columns (five, three, two, one), each plan laid
+// out by hand so its columns end level. The plan is a fixed stage zoomed to
+// the window: the five column plan fits one screen, the others fit the
+// width and scroll. Nothing is random: sizes, delays and the order are
+// fixed.
 //
 // Keys: Space plays the opening again, D switches the theme.
 
-const STAGE_W = 1440
-const STAGE_H = 810
-const PAD = 24
-const GAP = 14 // every column's tiles and gaps add up to 762, the stage less its padding
+const GAP = 14
+
+type TileId =
+  | "calendar"
+  | "signups"
+  | "search"
+  | "oncall"
+  | "seats"
+  | "deploy"
+  | "pipeline"
+  | "regions"
+  | "upload"
+  | "invoice"
+  | "voice"
+  | "chat"
+  | "countdown"
+  | "flags"
+  | "platforms"
+  | "reviews"
+  | "latency"
+  | "revenue"
+  | "notifications"
+  | "rollout"
+  | "inbox"
 
 type Tile = {
-  id: string
   Widget: ComponentType<WidgetProps>
   h: number
   dark?: boolean
   /** Padding inside the tile. A tile that is one nested card uses less. */
   pad?: string
 }
-type Row = Tile | { pair: [Tile, Tile]; h: number }
-type Column = { w: number; rows: Row[] }
 
-const COLUMNS: Column[] = [
-  {
-    w: 300,
-    rows: [
-      { id: "calendar", Widget: W.Calendar, h: 318 },
-      { id: "signups", Widget: W.Signups, h: 222 },
-      { id: "search", Widget: W.Search, h: 76, pad: "p-4" },
-      {
-        h: 104,
-        pair: [
-          { id: "oncall", Widget: W.OnCall, h: 104, pad: "p-4" },
-          { id: "seats", Widget: W.Seats, h: 104, pad: "p-4" },
-        ],
-      },
-    ],
-  },
-  {
-    w: 236,
-    rows: [
-      { id: "deploy", Widget: W.Deploy, h: 96 },
-      { id: "pipeline", Widget: W.Pipeline, h: 218 },
-      { id: "regions", Widget: W.Regions, h: 236, dark: true, pad: "p-5" },
-      { id: "upload", Widget: W.Upload, h: 170 },
-    ],
-  },
-  {
-    w: 292,
-    rows: [
-      { id: "invoice", Widget: W.Invoice, h: 274, pad: "p-3" },
-      { id: "voice", Widget: W.Voice, h: 150, dark: true },
-      { id: "chat", Widget: W.Chat, h: 310 },
-    ],
-  },
-  {
-    w: 236,
-    rows: [
-      { id: "countdown", Widget: W.Countdown, h: 168, dark: true },
-      { id: "flags", Widget: W.Flags, h: 152, pad: "p-3" },
-      { id: "platforms", Widget: W.Platforms, h: 122 },
-      { id: "reviews", Widget: W.Reviews, h: 130 },
-      { id: "latency", Widget: W.Latency, h: 134 },
-    ],
-  },
-  {
-    w: 272,
-    rows: [
-      { id: "revenue", Widget: W.Revenue, h: 214 },
-      { id: "notifications", Widget: W.Notifications, h: 256 },
-      { id: "rollout", Widget: W.Rollout, h: 108 },
-      { id: "inbox", Widget: W.Inbox, h: 142 },
-    ],
-  },
-]
+const TILES: Record<TileId, Tile> = {
+  calendar: { Widget: W.Calendar, h: 318 },
+  signups: { Widget: W.Signups, h: 222 },
+  search: { Widget: W.Search, h: 76, pad: "p-4" },
+  oncall: { Widget: W.OnCall, h: 104, pad: "p-4" },
+  seats: { Widget: W.Seats, h: 104, pad: "p-4" },
+  deploy: { Widget: W.Deploy, h: 96 },
+  pipeline: { Widget: W.Pipeline, h: 218 },
+  regions: { Widget: W.Regions, h: 236, dark: true, pad: "p-5" },
+  upload: { Widget: W.Upload, h: 170 },
+  invoice: { Widget: W.Invoice, h: 274, pad: "p-3" },
+  voice: { Widget: W.Voice, h: 150, dark: true },
+  chat: { Widget: W.Chat, h: 310 },
+  countdown: { Widget: W.Countdown, h: 168, dark: true },
+  flags: { Widget: W.Flags, h: 152, pad: "p-3" },
+  platforms: { Widget: W.Platforms, h: 122 },
+  reviews: { Widget: W.Reviews, h: 130 },
+  latency: { Widget: W.Latency, h: 134 },
+  revenue: { Widget: W.Revenue, h: 214 },
+  notifications: { Widget: W.Notifications, h: 256 },
+  rollout: { Widget: W.Rollout, h: 108 },
+  inbox: { Widget: W.Inbox, h: 142 },
+}
 
-const tilesOf = (row: Row): Tile[] => ("pair" in row ? row.pair : [row])
+/** One tile, or two sharing a row. */
+type Cell = TileId | readonly [TileId, TileId]
+const PAIR = ["oncall", "seats"] as const
 
-// Where each tile's centre rests, from the layout itself (stage pixels), so
+type Mode = "wide" | "three" | "two" | "one"
+type Plan = {
+  pad: number
+  /** Column widths. Each is one the widgets were checked at. */
+  widths: readonly number[]
+  columns: readonly (readonly Cell[])[]
+  /** Extra height for a tile in this plan, so the columns end level. */
+  grow?: Partial<Record<TileId, number>>
+  /** The title's size, px. In the wide plan it scales with the stage. */
+  title: number
+}
+
+// Four arrangements of the same 21 tiles. In each, every column's tiles and
+// gaps add up to the same height, and the three dark tiles are spread out.
+const PLANS: Record<Mode, Plan> = {
+  // 1440 x 810, one screen.
+  wide: {
+    pad: 24,
+    title: 64,
+    widths: [300, 236, 292, 236, 272],
+    columns: [
+      ["calendar", "signups", "search", PAIR],
+      ["deploy", "pipeline", "regions", "upload"],
+      ["invoice", "voice", "chat"],
+      ["countdown", "flags", "platforms", "reviews", "latency"],
+      ["revenue", "notifications", "rollout", "inbox"],
+    ],
+  },
+  // 946 wide: tablets upright, phones on their side.
+  three: {
+    pad: 24,
+    title: 52,
+    widths: [290, 290, 290],
+    grow: { voice: 2 },
+    columns: [
+      ["calendar", "search", PAIR, "regions", "revenue", "flags", "deploy"],
+      ["countdown", "pipeline", "notifications", "latency", "upload", "rollout", "inbox"],
+      ["invoice", "voice", "chat", "signups", "platforms", "reviews"],
+    ],
+  },
+  // 590 wide: large phones and small tablets.
+  two: {
+    pad: 16,
+    title: 44,
+    widths: [272, 272],
+    columns: [
+      ["calendar", "voice", "signups", "invoice", "deploy", "chat", "search", PAIR, "rollout", "inbox"],
+      ["countdown", "revenue", "pipeline", "notifications", "platforms", "regions", "flags", "upload", "reviews", "latency"],
+    ],
+  },
+  // 334 wide: phones.
+  one: {
+    pad: 16,
+    title: 36,
+    widths: [302],
+    columns: [
+      [
+        "calendar",
+        "countdown",
+        "signups",
+        "deploy",
+        "pipeline",
+        "invoice",
+        "voice",
+        "chat",
+        "search",
+        PAIR,
+        "revenue",
+        "notifications",
+        "regions",
+        "platforms",
+        "flags",
+        "upload",
+        "rollout",
+        "reviews",
+        "latency",
+        "inbox",
+      ],
+    ],
+  },
+}
+
+const idsOf = (cell: Cell): readonly TileId[] => (typeof cell === "string" ? [cell] : cell)
+const heightOf = (plan: Plan, id: TileId) => TILES[id].h + (plan.grow?.[id] ?? 0)
+
+// Where each tile rests in a plan, from the plan itself (stage pixels), so
 // the entrance never has to measure the page.
-const CENTRES = (() => {
-  const out: Record<string, readonly [number, number]> = {}
-  let x = PAD
-  for (const column of COLUMNS) {
-    let y = PAD
-    for (const row of column.rows) {
-      const tiles = tilesOf(row)
-      const w = (column.w - GAP * (tiles.length - 1)) / tiles.length
-      tiles.forEach((tile, i) => {
-        out[tile.id] = [x + i * (w + GAP) + w / 2, y + row.h / 2]
+type Box = { x: number; y: number; w: number; h: number }
+function lay(plan: Plan) {
+  const boxes = {} as Record<TileId, Box>
+  let x = plan.pad
+  let height = 0
+  plan.columns.forEach((column, i) => {
+    let y = plan.pad
+    for (const cell of column) {
+      const ids = idsOf(cell)
+      const w = (plan.widths[i] - GAP * (ids.length - 1)) / ids.length
+      const h = heightOf(plan, ids[0])
+      ids.forEach((id, k) => {
+        boxes[id] = { x: x + k * (w + GAP), y, w, h }
       })
-      y += row.h + GAP
+      y += h + GAP
     }
-    x += column.w + GAP
-  }
-  return out
-})()
-const FAR = Math.max(
-  ...Object.values(CENTRES).map(([x, y]) => Math.hypot(x - STAGE_W / 2, y - STAGE_H / 2))
-)
+    height = Math.max(height, y - GAP + plan.pad)
+    x += plan.widths[i] + GAP
+  })
+  return { ...plan, boxes, width: x - GAP + plan.pad, height }
+}
+const STAGES: Record<Mode, ReturnType<typeof lay>> = {
+  wide: lay(PLANS.wide),
+  three: lay(PLANS.three),
+  two: lay(PLANS.two),
+  one: lay(PLANS.one),
+}
 
-// The conductor's fixed order: across the columns with a column skipped
-// each time, so two changes in a row are never neighbours. Each beat wakes
-// one tile and the one half the list away.
+// Which plan, and how far to zoom it. The wide plan is used while it fits
+// one screen at a readable size. Below that the widest plan that stays
+// readable fits the width and the page scrolls.
+type Fit = { mode: Mode; zoom: number }
+function measure(): Fit {
+  const w = document.documentElement.clientWidth
+  const h = window.innerHeight
+  const wide = Math.min(w / STAGES.wide.width, h / STAGES.wide.height)
+  if (wide >= 0.72) return { mode: "wide", zoom: wide }
+  const mode: Mode = w >= 740 ? "three" : w >= 480 ? "two" : "one"
+  return { mode, zoom: Math.min(w / STAGES[mode].width, 1.3) }
+}
+
+// The conductor's fixed order, from the wide plan: across the columns with a
+// column skipped each time, so there two changes in a row are never
+// neighbours. Each beat wakes one tile and the one half the list away.
 const ORDER = (() => {
-  const ids: string[] = []
-  const depth = Math.max(...COLUMNS.map((c) => c.rows.length))
+  const ids: TileId[] = []
+  const { columns } = PLANS.wide
+  const depth = Math.max(...columns.map((c) => c.length))
   for (let r = 0; r < depth; r++) {
     for (const c of [0, 2, 4, 1, 3]) {
-      const row = COLUMNS[c].rows[r]
-      if (row) for (const t of tilesOf(row)) ids.push(t.id)
+      const cell = columns[c][r]
+      if (cell) ids.push(...idsOf(cell))
     }
   }
   return ids
@@ -135,26 +233,28 @@ const ORDER = (() => {
 // The timeline, ms.
 const TITLE_IN = 400
 const TITLE_OUT = 2400
-const LAND_AT = 2650
+const LAND_AT = 2750 // the title is nearly gone before the first tile shows
 const LAND_FOR = 1200 // one tile's flight
 const RIPPLE = 150 // the farthest tile leaves this long after the centre one
 const BEAT = 520 // between two wakes
 
 // The flight: how far out a tile starts (a share of its distance from the
-// centre), how enlarged, and the curve it lands on. Fast at first, then a
-// long soft settle, no overshoot.
+// centre of the screen), how enlarged, and the curve it lands on. Fast at
+// first, then a long soft settle, no overshoot.
 const PUSH = 0.9
 const SCALE = 1.5
 const LAND = "cubic-bezier(0.2, 0.9, 0.2, 1)"
+const SOFT = "cubic-bezier(0.33, 1, 0.68, 1)"
 
 type Phase = "blank" | "title" | "out" | "wall" | "live"
 
-const TileView = memo(function TileView({ tile, step }: { tile: Tile; step: number }) {
+const TileView = memo(function TileView({ id, h, step }: { id: TileId; h: number; step: number }) {
+  const tile = TILES[id]
   return (
     <section
-      data-tile={tile.id}
+      data-tile={id}
       className={`tile min-w-0 flex-1 rounded-[28px] ${tile.pad ?? "p-[18px]"} ${tile.dark ? "bg-tile-dark text-on-dark" : "bg-tile"}`}
-      style={{ height: tile.h }}
+      style={{ height: h }}
     >
       <tile.Widget step={step} />
     </section>
@@ -162,22 +262,39 @@ const TileView = memo(function TileView({ tile, step }: { tile: Tile; step: numb
 })
 
 export function WidgetWall() {
-  const stage = useRef<HTMLDivElement>(null)
+  const stageEl = useRef<HTMLDivElement>(null)
+  const [fit, setFit] = useState(measure)
+  const fitNow = useRef(fit)
   const [phase, setPhase] = useState<Phase>("blank")
-  const [steps, setSteps] = useState<Record<string, number>>({})
+  const [steps, setSteps] = useState<Partial<Record<TileId, number>>>({})
+  const stage = STAGES[fit.mode]
 
   useEffect(() => {
-    const el = stage.current
-    if (!el) return
+    fitNow.current = fit
+  }, [fit])
+
+  // Refit when the window changes. The observer also catches a scrollbar
+  // arriving, which changes the width without a resize event.
+  useEffect(() => {
+    const refit = () => {
+      const next = measure()
+      setFit((now) => (now.mode === next.mode && now.zoom === next.zoom ? now : next))
+    }
+    const observer = new ResizeObserver(refit)
+    observer.observe(document.documentElement)
+    window.addEventListener("resize", refit)
+    return () => {
+      observer.disconnect()
+      window.removeEventListener("resize", refit)
+    }
+  }, [])
+
+  useEffect(() => {
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches
-    const tiles = Array.from(el.querySelectorAll<HTMLElement>("[data-tile]"))
     let flights: Animation[] = []
     let beat = 0
     const timers: number[] = []
 
-    const fit = () => {
-      el.style.zoom = String(Math.min(window.innerWidth / STAGE_W, window.innerHeight / STAGE_H))
-    }
     const stop = () => {
       flights.forEach((flight) => flight.cancel())
       flights = []
@@ -197,12 +314,23 @@ export function WidgetWall() {
     }
     const land = () => {
       setPhase("wall")
+      const { mode, zoom } = fitNow.current
+      const { boxes, width, height } = STAGES[mode]
+      // The part of the stage on screen, in the stage's own pixels. The
+      // tiles fly in around its centre, and only the ones in it fly.
+      const viewH = window.innerHeight / zoom
+      const viewTop = (window.scrollY - Math.max(0, (window.innerHeight - height * zoom) / 2)) / zoom
+      const cx = width / 2
+      const cy = viewTop + viewH / 2
+      const far = Math.hypot(width / 2, Math.min(viewH, height) / 2)
+      const tiles = stageEl.current?.querySelectorAll<HTMLElement>("[data-tile]") ?? []
       for (const tile of tiles) {
-        const [cx, cy] = CENTRES[tile.dataset.tile ?? ""] ?? [STAGE_W / 2, STAGE_H / 2]
-        const dx = cx - STAGE_W / 2
-        const dy = cy - STAGE_H / 2
+        const box = boxes[tile.dataset.tile as TileId]
+        if (!box || box.y + box.h < viewTop || box.y > viewTop + viewH) continue
+        const dx = box.x + box.w / 2 - cx
+        const dy = box.y + box.h / 2 - cy
         // The centre leaves first: the wall opens outward as it lands.
-        const delay = (Math.hypot(dx, dy) / FAR) * RIPPLE
+        const delay = Math.min(1, Math.hypot(dx, dy) / far) * RIPPLE
         const timing = { delay, fill: "backwards" } as const
         flights.push(
           tile.animate(
@@ -212,16 +340,13 @@ export function WidgetWall() {
             ],
             { ...timing, duration: LAND_FOR, easing: LAND }
           ),
-          // Seen and sharp well before it comes to rest.
-          tile.animate([{ opacity: 0 }, { opacity: 1 }], {
+          // Seen and sharp well before it comes to rest. The blur is a
+          // trace, only there to soften the first frames of the fade.
+          tile.animate([{ opacity: 0 }, { opacity: 1 }], { ...timing, duration: 420, easing: SOFT }),
+          tile.animate([{ filter: "blur(3px)" }, { filter: "blur(0px)" }], {
             ...timing,
-            duration: 420,
-            easing: "cubic-bezier(0.33, 1, 0.68, 1)",
-          }),
-          tile.animate([{ filter: "blur(10px)" }, { filter: "blur(0px)" }], {
-            ...timing,
-            duration: 560,
-            easing: "cubic-bezier(0.33, 1, 0.68, 1)",
+            duration: 320,
+            easing: SOFT,
           })
         )
       }
@@ -250,8 +375,6 @@ export function WidgetWall() {
         document.documentElement.classList.toggle("dark")
       }
     }
-    fit()
-    window.addEventListener("resize", fit)
     window.addEventListener("keydown", onKey)
     // Wait for Onest, so the title never swaps face mid entrance.
     let cancelled = false
@@ -262,33 +385,42 @@ export function WidgetWall() {
     return () => {
       cancelled = true
       stop()
-      window.removeEventListener("resize", fit)
       window.removeEventListener("keydown", onKey)
     }
   }, [])
 
   return (
-    <main className="fixed inset-0 grid place-items-center overflow-hidden bg-canvas" data-phase={phase}>
-      <div ref={stage} className="relative shrink-0" style={{ width: STAGE_W, height: STAGE_H }}>
-        <h1 className="title pointer-events-none absolute inset-0 grid place-items-center text-[64px] leading-none font-semibold tracking-[-0.035em]">
-          <span>
-            <span className="title-word">Launch</span> <span className="title-word">Day</span>
-          </span>
-        </h1>
+    // Clipped, so a tile flying in from past the edge never adds a scrollbar.
+    <main className="grid min-h-dvh place-items-center overflow-clip bg-canvas" data-phase={phase}>
+      <h1
+        className="title pointer-events-none fixed inset-0 grid place-items-center leading-none font-semibold tracking-[-0.035em]"
+        style={{ fontSize: stage.title * (fit.mode === "wide" ? fit.zoom : 1) }}
+      >
+        <span>
+          <span className="title-word">Launch</span> <span className="title-word">Day</span>
+        </span>
+      </h1>
 
-        <div className="absolute inset-0 flex" style={{ gap: GAP, padding: PAD }}>
-          {COLUMNS.map((column, i) => (
-            <div key={i} className="flex shrink-0 flex-col" style={{ width: column.w, gap: GAP }}>
-              {column.rows.map((row, r) => (
-                <div key={r} className="flex shrink-0" style={{ gap: GAP, height: row.h }}>
-                  {tilesOf(row).map((tile) => (
-                    <TileView key={tile.id} tile={tile} step={steps[tile.id] ?? 0} />
+      <div
+        ref={stageEl}
+        className="flex shrink-0"
+        style={{ width: stage.width, height: stage.height, padding: stage.pad, gap: GAP, zoom: fit.zoom }}
+      >
+        {stage.columns.map((column, i) => (
+          <div key={i} className="flex shrink-0 flex-col" style={{ width: stage.widths[i], gap: GAP }}>
+            {column.map((cell) => {
+              const ids = idsOf(cell)
+              const h = heightOf(stage, ids[0])
+              return (
+                <div key={ids[0]} className="flex shrink-0" style={{ gap: GAP, height: h }}>
+                  {ids.map((id) => (
+                    <TileView key={id} id={id} h={h} step={steps[id] ?? 0} />
                   ))}
                 </div>
-              ))}
-            </div>
-          ))}
-        </div>
+              )
+            })}
+          </div>
+        ))}
       </div>
     </main>
   )
