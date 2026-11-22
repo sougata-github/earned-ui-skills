@@ -84,11 +84,28 @@ conductor, an opening where the tiles land like a home screen on unlock), a
 number that rolls and text that swaps, a lab, the forms a tile can take with
 when to use each, and the lessons from building it.
 
-The wall in `site/` is the skill's own lab: 21 tiles telling one launch day.
+Its live demo is the launch day wall on the site: 21 tiles telling one
+story.
+
+## The site
+
+`site/` is the showcase: a list of the skills, a page for each with its live
+demo, and the demos on their own. It is a Next.js static export, and it runs
+on the skills' own assets, copied in before every dev, build and typecheck,
+so what ships in a skill is what is seen there.
 
 ```bash
-cd site && pnpm install && pnpm dev   # localhost:3200, add ?lab for the lab
+cd site && pnpm install && pnpm dev   # localhost:3201
 ```
+
+- `/` lists the skills, `/skills/<name>/` is a skill's page
+- `/demo/widget-bento-web/` is the wall (add `?lab` for the bento lab)
+- `/demo/liquid-glass-web/` is the glass demo
+- `pnpm build` writes the static site to `site/out`. Set
+  `NEXT_PUBLIC_SITE_URL` to the real origin first: canonical URLs, the
+  sitemap, robots.txt and llms.txt are built from it
+- Content is MDX in `site/content`, built by Velite, which also writes a
+  Markdown twin of every skill page and an `llms.txt`
 
 ## Credits
 
@@ -104,5 +121,7 @@ cd site && pnpm install && pnpm dev   # localhost:3200, add ?lab for the lab
 
 The code and the skills are MIT licensed.
 
-The images in `demo-assets/` are not. They show artwork that belongs to its
-owner, all rights reserved: do not copy, reuse or redistribute them.
+The images in `demo-assets/` and `site/public/posters/liquid-glass-web.webp`
+are not. They show artwork that belongs to its owner, all rights reserved: do
+not copy, reuse or redistribute them. The backgrounds in `site/public/glass/`
+are drawn by this repository's own shader and are MIT like the rest.

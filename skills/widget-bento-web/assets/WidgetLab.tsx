@@ -29,7 +29,9 @@ export function WidgetLab({
 }) {
   const [look, setLook] = useState<Look>({ ...LOOK, ...start })
   const [plan, setPlan] = useState("auto")
-  const [dark, setDark] = useState(() => document.documentElement.classList.contains("dark"))
+  const [dark, setDark] = useState(
+    () => typeof document !== "undefined" && document.documentElement.classList.contains("dark")
+  )
   const [empty, setEmpty] = useState(false)
   const [live, setLive] = useState(true)
   const [replay, setReplay] = useState(0)

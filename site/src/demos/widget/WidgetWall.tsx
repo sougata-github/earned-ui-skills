@@ -1,8 +1,10 @@
+"use client"
+
 import { useEffect, useState } from "react"
 
 import * as W from "./widgets"
-import { WidgetLab } from "./skill/WidgetLab"
-import { Wall, type Plan, type Tile } from "./skill/wall"
+import { WidgetLab } from "@/skill/widget/WidgetLab"
+import { Wall, type Plan, type Tile } from "@/skill/widget/wall"
 
 // The widget-bento-web lab's wall: launch day for Relay 2.0, in 21 tiles.
 // This file is only the content: which tiles, how tall, and how they are
@@ -12,9 +14,9 @@ import { Wall, type Plan, type Tile } from "./skill/wall"
 // Keys: Space plays the opening again, D switches the theme, P pauses and
 // resumes (wait a second after pausing and nothing is mid change).
 //
-// In the address: ?lab for the bento lab with its controls, ?dark to start
-// in the dark theme, ?still for a posed wall with no opening and nothing
-// moving, for a clean capture.
+// In the address: ?lab for the bento lab with its controls, ?dark or ?light
+// for a theme, ?still for a posed wall with no opening and nothing moving
+// (a clean capture), ?embed when it sits in a frame on a page.
 
 type TileId =
   | "calendar"
@@ -177,11 +179,25 @@ const POSE: Partial<Record<TileId, number>> = {
   rollout: 2,
   inbox: 2,
 }
-const STILL = new URLSearchParams(window.location.search).has("still")
+const PARAMS = new URLSearchParams(window.location.search)
+const STILL = PARAMS.has("still")
+// In a frame on a page: a frame wide enough shows the whole five column
+// wall, however small. A narrower one shows the top of the wall for its
+// width, as a moving preview.
+const EMBED = PARAMS.has("embed")
+const WHOLE = 700
 
 export function WidgetWall() {
   const [replay, setReplay] = useState(0)
   const [live, setLive] = useState(!STILL)
+  const [whole, setWhole] = useState(() => EMBED && window.innerWidth >= WHOLE)
+
+  useEffect(() => {
+    if (!EMBED) return
+    const fit = () => setWhole(window.innerWidth >= WHOLE)
+    window.addEventListener("resize", fit)
+    return () => window.removeEventListener("resize", fit)
+  }, [])
 
   useEffect(() => {
     W.clock.paused = !live
@@ -209,6 +225,7 @@ export function WidgetWall() {
       title={STILL ? undefined : TITLE}
       live={live}
       start={STILL ? POSE : undefined}
+      plan={whole ? "five" : undefined}
       replay={replay}
     />
   )
@@ -217,4 +234,9 @@ export function WidgetWall() {
 /** The same wall in the skill's lab: controls, empty tiles, Copy as JSON. */
 export function WidgetWallLab() {
   return <WidgetLab tiles={TILES} plans={PLANS} title={TITLE} />
+}
+
+/** The demo page: the wall, or the lab with ?lab. */
+export function WidgetDemo() {
+  return PARAMS.has("lab") ? <WidgetWallLab /> : <WidgetWall />
 }

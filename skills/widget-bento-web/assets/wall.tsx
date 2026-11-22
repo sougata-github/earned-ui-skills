@@ -1,6 +1,7 @@
 import {
   memo,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -276,7 +277,7 @@ export function Wall({
 }: WallProps) {
   const { gap, radius, pad, beat } = { ...LOOK, ...look }
   const stageEl = useRef<HTMLDivElement>(null)
-  const [view, setView] = useState(() => viewport(inset))
+  const [view, setView] = useState(UNMEASURED)
   const [phase, setPhase] = useState<Phase>("blank")
   const [steps, setSteps] = useState<Record<string, number>>(() => ({ ...start }))
   const turn = useRef(0)
@@ -292,9 +293,10 @@ export function Wall({
     now.current = { stage, zoom: fit.zoom, opens: title !== undefined, start }
   }, [stage, fit.zoom, title, start])
 
-  // Refit when the window changes. The observer also catches a scrollbar
-  // arriving, which changes the width without a resize event.
-  useEffect(() => {
+  // Measure before the first paint, then refit when the window changes. The
+  // observer also catches a scrollbar arriving, which changes the width
+  // without a resize event.
+  useLayoutEffect(() => {
     const refit = () => {
       const next = viewport(inset)
       setView((was) => (was.w === next.w && was.h === next.h ? was : next))
@@ -460,6 +462,10 @@ export function Wall({
     </main>
   )
 }
+
+/** What the wall assumes until it has measured the window, which is also
+ *  what a server renders: the widest plan at its own size. */
+const UNMEASURED = { w: 1440, h: 810 }
 
 function viewport(inset: number) {
   return { w: document.documentElement.clientWidth - inset, h: window.innerHeight }

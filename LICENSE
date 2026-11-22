@@ -23,6 +23,7 @@ SOFTWARE.
 ---
 
 The MIT License above covers the code and the skills in this repository. It
-does not cover the files in `demo-assets/`, which show artwork that belongs to
-its owner, all rights reserved. They may not be copied, reused or
+does not cover the files in `demo-assets/`, nor the image
+`site/public/posters/liquid-glass-web.webp`, which show artwork that belongs
+to its owner, all rights reserved. They may not be copied, reused or
 redistributed.

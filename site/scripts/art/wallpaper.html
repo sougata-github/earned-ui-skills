@@ -1,0 +1,81 @@
+<!doctype html>
+<meta charset="utf-8" />
+<title>Wallpaper</title>
+<style>
+  html, body { margin: 0; background: #000; }
+  canvas { position: absolute; top: 0; left: 0; display: block; }
+</style>
+<canvas id="c" width="2560" height="1600" style="width: 2560px; height: 1600px"></canvas>
+<script>
+  // The site's own backgrounds for the liquid glass demo: layered ribbons
+  // with a lit crest and a soft shadow, drawn by one shader in three
+  // palettes. Kept mid dark so light ink reads on glass over any part, and
+  // crisp at the crests so the glass has an edge to bend. Rendered once to
+  // files by render.mjs. The palette is the address's hash.
+  const hex = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16) / 255)
+  const PALETTES = {
+    dusk: { seed: 3.1, angle: -0.42, bg: ["#140b33", "#2a1563"],
+      ribbons: ["#3a1a7a", "#5a2396", "#8a2d9a", "#b83a84", "#d9506a", "#e6744f"] },
+    tide: { seed: 7.4, angle: 0.36, bg: ["#050f26", "#0a2456"],
+      ribbons: ["#0c2f73", "#1147a0", "#1766c4", "#1f8ad4", "#2fb0d6", "#5cc9cf"] },
+    grove: { seed: 12.8, angle: -0.3, bg: ["#041513", "#08302c"],
+      ribbons: ["#0a433d", "#0f6350", "#178a5c", "#2fa862", "#6fbb55", "#a3c44a"] },
+  }
+  const P = PALETTES[location.hash.slice(1)] ?? PALETTES.dusk
+
+  const FRAG = `#version 300 es
+  precision highp float;
+  out vec4 o;
+  uniform vec2 R; uniform float SEED; uniform float ANGLE;
+  uniform vec3 BG0; uniform vec3 BG1; uniform vec3 C[6];
+  float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+  float noise(vec2 p) {
+    vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
+    return mix(mix(hash(i), hash(i + vec2(1, 0)), f.x), mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), f.x), f.y);
+  }
+  float fbm(vec2 p) { float a = 0.5, s = 0.0; for (int i = 0; i < 5; i++) { s += a * noise(p); p = p * 2.03 + 17.0; a *= 0.5; } return s; }
+  void main() {
+    vec2 uv = gl_FragCoord.xy / R; uv.y = 1.0 - uv.y;
+    float asp = R.x / R.y;
+    mat2 rot = mat2(cos(ANGLE), -sin(ANGLE), sin(ANGLE), cos(ANGLE));
+    vec2 q = rot * (vec2(uv.x * asp, uv.y) - vec2(asp * 0.5, 0.5));
+    vec3 col = mix(BG0, BG1, smoothstep(-0.7, 0.6, q.y + 0.3 * fbm(q * 1.1 + SEED)));
+    for (int i = 0; i < 6; i++) {
+      float fi = float(i);
+      float y0 = mix(-0.52, 0.5, fi / 5.0);
+      float w = y0
+        + 0.15 * sin(q.x * (1.05 + 0.3 * fi) + SEED * 1.7 + fi * 1.9)
+        + 0.06 * sin(q.x * (2.5 + 0.45 * fi) + fi * 4.1 + SEED)
+        + 0.12 * (fbm(vec2(q.x * 0.8 + fi * 3.1, SEED + fi)) - 0.5);
+      float d = q.y - w;                       // below the crest is inside the ribbon
+      float body = smoothstep(-0.0025, 0.0025, d);
+      vec3 rc = mix(C[i], C[i] * 0.5, smoothstep(0.0, 0.42, d));   // falls into shade
+      rc += 0.2 * exp(-d * 30.0);                                   // the lit crest
+      rc += 0.05 * (fbm(vec2(q.x * 3.0, d * 9.0 + fi)) - 0.5);      // a little surface
+      col *= 1.0 - 0.3 * exp(d * 26.0) * (1.0 - body);              // its shadow on what is behind
+      col = mix(col, rc, body);
+    }
+    col += (hash(gl_FragCoord.xy + SEED) - 0.5) * 0.016;            // grain, against banding
+    o = vec4(clamp(col, 0.0, 1.0), 1.0);
+  }`
+  const VERT = `#version 300 es
+  in vec2 p; void main() { gl_Position = vec4(p, 0.0, 1.0); }`
+
+  const canvas = document.getElementById("c")
+  const gl = canvas.getContext("webgl2", { preserveDrawingBuffer: true })
+  const sh = (type, src) => { const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s)
+    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) document.title = "ERR " + gl.getShaderInfoLog(s); return s }
+  const prog = gl.createProgram()
+  gl.attachShader(prog, sh(gl.VERTEX_SHADER, VERT)); gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, FRAG))
+  gl.linkProgram(prog); gl.useProgram(prog)
+  gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer())
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW)
+  const loc = gl.getAttribLocation(prog, "p"); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0)
+  const u = (n) => gl.getUniformLocation(prog, n)
+  gl.uniform2f(u("R"), canvas.width, canvas.height)
+  gl.uniform1f(u("SEED"), P.seed); gl.uniform1f(u("ANGLE"), P.angle)
+  gl.uniform3fv(u("BG0"), hex(P.bg[0])); gl.uniform3fv(u("BG1"), hex(P.bg[1]))
+  gl.uniform3fv(u("C"), P.ribbons.flatMap(hex))
+  gl.viewport(0, 0, canvas.width, canvas.height)
+  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
+</script>

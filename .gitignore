@@ -2,3 +2,12 @@
 node_modules/
 dist/
 site/src/skill/
+site/.next/
+site/out/
+site/.velite/
+site/next-env.d.ts
+site/tsconfig.tsbuildinfo
+site/public/llms.txt
+site/public/skills/
+site/public/static/
+site/scripts/art/raw/

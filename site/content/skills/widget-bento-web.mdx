@@ -1,0 +1,110 @@
+---
+slug: widget-bento-web
+title: A bento of live widgets, composed on every screen
+builds: A bento of live widgets where every tile proves something the page says, composed on every screen.
+description: widget-bento-web is a free agent skill that takes Claude Code, Codex or Cursor through building a bento grid of live widgets for a website. Every tile proves one thing the page says with real product UI, and you approve the structure and each widget in a lab before it ships.
+seoTitle: Bento grid of live widgets, a skill for Claude Code
+seoDescription: A free agent skill for building a bento grid of live widgets where every tile proves a claim from your page. For Claude Code, Codex and Cursor.
+keywords:
+  - bento grid
+  - bento ui
+  - bento layout
+  - bento grid design
+  - what is a bento grid
+  - bento grid examples
+  - widget ui
+  - dashboard widgets
+  - animated bento grid
+  - features section design
+  - claude code skills
+  - agent skills
+  - frontend design skill
+  - claude code frontend design
+updatedAt: 2026-11-22
+order: 2
+poster: /posters/widget-bento-web.webp
+posterAlt: A dark wall of 21 live widgets telling one launch day, from a calendar and a release pipeline to a team chat and a revenue curve
+steps:
+  - title: Claims, one story, one cast
+    text: The agent lists what your page claims. Each claim becomes one tile, and one story with one cast of names, numbers and dates runs through all of them.
+  - title: The frame
+    text: Rounded tiles on a canvas for a showcase, or cells ruled by hairlines for a features section inside a page.
+  - title: The empty bento, in a lab
+    text: Every tile is first a labelled box with a size. You approve which tiles exist and how big they are before any content is designed.
+  - title: One widget at a time
+    text: Each widget is built at its real size and shown in the lab in both themes. You click through its states and send tweaks back, or keep the look.
+  - title: Alive by state
+    text: Widgets step through two to four states. One conductor wakes two tiles a beat, in a fixed order that never wakes two neighbours together.
+  - title: Every screen shape
+    text: Tiles keep their size. Each screen shape gets its own arrangement, laid out so every column ends level, and the wall picks one for the window.
+  - title: Verify
+    text: A checklist covers the story, the anatomy, level columns, both themes, states that move nothing beside them, and reduced motion.
+faq:
+  - question: Is widget-bento-web free?
+    answer:
+      - Yes. widget-bento-web is free and MIT licensed, like every skill in Earned UI Skills. You can use the skill and its code in personal and commercial projects.
+  - question: Is widget-bento-web a component library?
+    answer:
+      - No. widget-bento-web is a workflow, not a component library. It ships a small wall engine and a lab to adapt, and the widgets are built by your agent from your own content, in your own stack.
+  - question: Does widget-bento-web work with Tailwind and shadcn/ui?
+    answer:
+      - Yes. widget-bento-web works with Tailwind and shadcn/ui. The engine and its styles are plain React and plain CSS, and the widgets can be written with whatever the project already uses.
+  - question: How do you make a bento grid responsive?
+    answer:
+      - widget-bento-web makes a bento grid responsive by rearranging the tiles, never by squeezing them. Each screen shape gets its own arrangement of the same tiles in a different number of columns, laid out so every column ends level.
+  - question: Do the widgets use real data?
+    answer:
+      - The widgets use fixed sample data that tells one believable story. Nothing is random and nothing is presented as a real metric. To show real numbers, replace the story file with your own data.
+  - question: Which agents can use widget-bento-web?
+    answer:
+      - widget-bento-web works with Claude Code, Codex, Cursor and the other agents the skills CLI supports. Install it with npx skills add sougata-github/earned-ui-skills --skill widget-bento-web.
+---
+
+## What is a bento grid?
+
+A bento grid is a layout of tiles of different sizes packed into one block, named after the compartments of a Japanese lunch box. Each tile holds one idea. It is the common way to show the features of a product in one view.
+
+## Why do AI built bento grids look generic?
+
+Because the tiles are decoration. An agent with no guidance fills rounded boxes with charts and icons that would look at home on any site, so the grid says nothing about the product.
+
+The skill's one rule is that a tile is evidence. Every tile proves one thing the page already says, in the form that thing already has. A conversation is a chat. A schedule is a calendar. A rollout is a slider. A trend is a line.
+
+| A generic bento | A bento built with the skill |
+| --- | --- |
+| Random charts in every tile | Mostly product UI, a chart only when the data is a series |
+| Unrelated sample content | One story and one cast across every tile |
+| Looping decoration | Widgets that change state on a beat |
+| One layout, shrunk on small screens | An arrangement per screen shape |
+
+## How does the skill work?
+
+widget-bento-web is a workflow your agent follows. Ask for a bento, for example "a features section with live widgets for this product", and the agent reads your page, lists its claims, and picks one story to run through every tile.
+
+Then it builds a lab. You first see the empty bento, each tile a labelled box with a size, and approve the structure before any content exists. After that each widget is built at its real size and shown in the lab in both themes. You click a tile to step through its states, then send changes back or keep the look.
+
+## How do the widgets come alive?
+
+They change state. A button goes from Send to Sending to Sent. A rollout moves from 25 to 50 to 100 percent. A number rolls to its next value. Each widget has two to four states, and one conductor steps two tiles every half second in a fixed order.
+
+Nothing loops for decoration and nothing is random, so the wall looks the same on every load and can be reviewed.
+
+## How do you make a bento grid responsive?
+
+By rearranging the tiles, not squeezing them. A tile has a fixed height and its content is laid out to fill it on whole pixels. A different screen gets the same tiles in a different number of columns, and each arrangement is laid out by hand so every column ends level.
+
+The wall then picks the arrangement for the window. Where one matches the window's shape it fits one screen. Where none does, the wall fills the width and scrolls.
+
+## What is in the skill?
+
+- **A wall engine** in one React file: arrangements per screen shape, a check that every column ends level, the fit to any window, the conductor, and an opening where the tiles land like a home screen on unlock.
+- **Two pieces every live widget needs**: a number that rolls to its value and text that crossfades to its value.
+- **A lab**: sliders for the structure, empty tiles, click a tile to step it, Copy as JSON.
+- **The forms a tile can take**, with when to use each and when not to.
+- **Forty lessons**: what looked wrong on screen, why, and what fixed it.
+
+## When is this not the right tool?
+
+When you need a real dashboard. The skill builds a marketing surface, a wall that shows what a product does, on fixed sample data. It is not a charting or data grid library.
+
+It is also for websites. It does not build native home screen widgets for iOS or Android.

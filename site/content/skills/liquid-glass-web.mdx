@@ -1,0 +1,108 @@
+---
+slug: liquid-glass-web
+title: Liquid Glass for the web, with real refraction
+builds: Apple style Liquid Glass with real refraction in WebGL2, never a backdrop blur passed off as glass.
+description: liquid-glass-web is a free agent skill that takes Claude Code, Codex or Cursor through building Apple style Liquid Glass for the web. The glass bends the image behind it with real refraction in WebGL2, and you tune the look by eye in a lab before any component ships.
+seoTitle: Liquid Glass for the web, a skill for Claude Code
+seoDescription: A free agent skill for building Apple style Liquid Glass on the web with real WebGL2 refraction, tuned by eye in a lab. For Claude Code, Codex and Cursor.
+keywords:
+  - liquid glass
+  - liquid glass css
+  - liquid glass effect
+  - liquid glass react
+  - liquid glass ui
+  - apple liquid glass
+  - what is liquid glass
+  - ios 26 liquid glass
+  - liquid glass web
+  - liquid glass button
+  - glassmorphism
+  - glass effect css
+  - frosted glass css
+  - claude code skills
+  - agent skills
+updatedAt: 2026-11-22
+order: 1
+poster: /posters/liquid-glass-web.webp
+posterAlt: Six liquid glass widgets over an image, with a material panel beside them for tuning the glass
+steps:
+  - title: What is behind the glass
+    text: The glass has no look of its own. The agent asks what it will sit on and collects two references, one for the scene and one for the target look.
+  - title: The architecture
+    text: For an image, video or canvas the page owns, one WebGL2 canvas draws the image and the glass together. Content stays real HTML laid over it.
+  - title: A tuning lab
+    text: One page with your real background, the real component and a slider for every property of the glass. This is where the look is found.
+  - title: One component at a time
+    text: Each component is shown in the lab first. You drag the sliders and paste the values back as JSON, or say the current look is right.
+  - title: Wire it into the page
+    text: Shapes come from the DOM, the canvas renders on demand, and the glass arrives by forming its optics, never by fading in.
+  - title: Verify
+    text: A checklist covers refraction on the real image, both themes, resizing, alignment while moving, reduced transparency and no WebGL2.
+faq:
+  - question: Is liquid-glass-web free?
+    answer:
+      - Yes. liquid-glass-web is free and MIT licensed, like every skill in Earned UI Skills. You can use the skill and its renderer in personal and commercial projects.
+  - question: Does liquid-glass-web work with React and Next.js?
+    answer:
+      - Yes. liquid-glass-web works with React and Next.js. The renderer is a plain TypeScript class with no dependencies, so it also works with Vue, Svelte or no framework. The tuning lab that ships with the skill is a React file.
+  - question: Can you make Liquid Glass with CSS only?
+    answer:
+      - No, not fully. CSS backdrop-filter can blur and tint what is behind an element, but it cannot bend it, and bending is what defines Liquid Glass. An SVG displacement filter can refract a backdrop, but only in Chromium browsers.
+      - liquid-glass-web uses WebGL2 for glass over an image, video or canvas the page owns, which gives the same optics in every modern browser.
+  - question: Which agents can use liquid-glass-web?
+    answer:
+      - liquid-glass-web works with Claude Code, Codex, Cursor and the other agents the skills CLI supports. Install it with npx skills add sougata-github/earned-ui-skills --skill liquid-glass-web.
+  - question: Does Liquid Glass hurt performance on the web?
+    answer:
+      - It can if it renders all the time. liquid-glass-web draws only when something changes, caps the pixel ratio at 2 and pauses when the glass is off screen or the tab is hidden, so a still page costs nothing.
+  - question: What happens in a browser without WebGL2?
+    answer:
+      - In a browser without WebGL2 the skill shows the image with a solid surface for each panel and switches the text to the page's own colours. It never falls back to a blur standing in for glass.
+---
+
+## What is Liquid Glass?
+
+Liquid Glass is the material Apple introduced in 2025 for iOS 26 and macOS Tahoe. It is a clear slab that bends the content behind it, the way a lens does, with light catching its rim. Apple defines it by that bending, which it calls lensing.
+
+It sits on the functional layer of an interface: controls, bars and widgets floating over content. It is not meant for the content itself.
+
+## Is Liquid Glass the same as glassmorphism?
+
+No. Glassmorphism is a frosted look made with a backdrop blur, a border and a white tint. Liquid Glass refracts. The edge of the glass shows the background displaced and magnified, and the middle stays clear.
+
+| | Glassmorphism | Liquid Glass |
+| --- | --- | --- |
+| What it does to the background | Blurs it | Bends it at the edge |
+| Made with | `backdrop-filter: blur()` | Refraction, in a shader |
+| Edge | A border | A lit rim and a refracted band |
+| Where the light is | Nowhere | One fixed direction for the page |
+
+The skill's one rule follows from this: glass bends light, a blur scatters it. If there is no refraction at the edge, it is not done.
+
+## How do you make a liquid glass effect on the web?
+
+You draw it in WebGL2. One canvas draws the image and the glass together, and each glass element on the page is a transparent box whose position and corner radius are measured and sent to the shader.
+
+For every pixel of a shape the shader works out how far it is from the edge, builds a surface with a flat top and a rounded lip, and bends the view through it with Snell's law. Red, green and blue bend by slightly different amounts, which gives a trace of colour at the rim. Frost, a fixed light, a rim highlight and a soft contact shadow are layered on top.
+
+Text and controls stay real HTML over the canvas, so they remain selectable, accessible and sharp.
+
+## How does the skill work?
+
+liquid-glass-web is a workflow your agent follows, not a package. Ask for glass, for example "a liquid glass player widget over this image", and the agent works in a fixed order: what sits behind the glass, the architecture, a tuning lab, then one component at a time through that lab.
+
+The lab is the method. Glass is judged by eye, and a description like "a bit thicker, less rim, softer light" does not survive the round trip through code and reloads. In the lab you drag a slider for every property and press Copy as JSON. The agent locks those values as the material for every component after it.
+
+## What is in the skill?
+
+- **A renderer** in one TypeScript file with no dependencies. It draws up to eight glass panels and four glass on glass insets, melts nearby shapes together, and cross-fades between images.
+- **A tuning lab** in one React file, with a slider for every property and Copy as JSON.
+- **The optics, term by term**, so the material can be tuned with intent and the shader extended.
+- **Apple's rules, distilled**, with sources: where glass belongs, when to use the clear variant, why glass never sits on glass.
+- **The lessons**: each failure met while shipping it, with its cause and fix.
+
+## When is this not the right tool?
+
+When the glass has to sit over live, arbitrary page content, such as a header over a scrolling article. The WebGL approach needs to own what is behind the glass. The skill covers the alternatives and their limits, but they are harder and less exact.
+
+It is also the wrong tool for a page with no rich image behind the glass. Refraction is invisible over a flat colour.

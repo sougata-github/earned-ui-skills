@@ -1,3 +1,5 @@
+"use client"
+
 import { useEffect, useState, type CSSProperties, type ReactNode } from "react"
 import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react"
 import {
@@ -41,8 +43,8 @@ import {
   UPLOAD,
   type CrewId,
 } from "./story"
-import { Digits, Swap } from "./skill/pieces"
-import type { WidgetProps } from "./skill/wall"
+import { Digits, Swap } from "@/skill/widget/pieces"
+import type { WidgetProps } from "@/skill/widget/wall"
 
 // The launch day wall's widgets. Each one tells one part of the story, is
 // laid out to fill its tile exactly, and steps through a few states when
