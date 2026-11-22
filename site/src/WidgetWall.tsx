@@ -16,12 +16,13 @@ import type { WidgetProps } from "./widgets"
 //      a fixed order.
 //
 // Responsive by arrangement, never by squeezing. Every tile is designed at a
-// fixed height and for a narrow range of widths, so a smaller screen gets
-// the same tiles in fewer columns (five, three, two, one), each plan laid
-// out by hand so its columns end level. The plan is a fixed stage zoomed to
-// the window: the five column plan fits one screen, the others fit the
-// width and scroll. Nothing is random: sizes, delays and the order are
-// fixed.
+// fixed height and for a narrow range of widths, so a different screen gets
+// the same tiles in a different number of columns (five, four, three, two,
+// one), each plan laid out by hand so its columns end level. A plan is a
+// fixed stage zoomed to the window. Where a plan matches the window's shape
+// it fits one screen. Where none does, the wall fills the width and scrolls,
+// so it never floats between wide empty bands. Nothing is random: sizes,
+// delays and the order are fixed.
 //
 // Keys: Space plays the opening again, D switches the theme.
 
@@ -86,7 +87,7 @@ const TILES: Record<TileId, Tile> = {
 type Cell = TileId | readonly [TileId, TileId]
 const PAIR = ["oncall", "seats"] as const
 
-type Mode = "wide" | "three" | "two" | "one"
+type Mode = "wide" | "four" | "three" | "two" | "one"
 type Plan = {
   pad: number
   /** Column widths. Each is one the widgets were checked at. */
@@ -94,11 +95,11 @@ type Plan = {
   columns: readonly (readonly Cell[])[]
   /** Extra height for a tile in this plan, so the columns end level. */
   grow?: Partial<Record<TileId, number>>
-  /** The title's size, px. In the wide plan it scales with the stage. */
+  /** The title's size, px. On one screen it scales with the stage. */
   title: number
 }
 
-// Four arrangements of the same 21 tiles. In each, every column's tiles and
+// Five arrangements of the same 21 tiles. In each, every column's tiles and
 // gaps add up to the same height, and the three dark tiles are spread out.
 const PLANS: Record<Mode, Plan> = {
   // 1440 x 810, one screen.
@@ -114,7 +115,19 @@ const PLANS: Record<Mode, Plan> = {
       ["revenue", "notifications", "rollout", "inbox"],
     ],
   },
-  // 946 wide: tablets upright, phones on their side.
+  // 1250 x 1004: windows squarer than a screen, tablets on their side.
+  four: {
+    pad: 24,
+    title: 60,
+    widths: [290, 290, 290, 290],
+    columns: [
+      ["calendar", PAIR, "pipeline", "flags", "rollout"],
+      ["invoice", "voice", "search", "platforms", "reviews", "latency"],
+      ["countdown", "signups", "chat", "revenue"],
+      ["deploy", "notifications", "upload", "regions", "inbox"],
+    ],
+  },
+  // 946 x 1328: tablets upright, phones on their side.
   three: {
     pad: 24,
     title: 52,
@@ -196,22 +209,48 @@ function lay(plan: Plan) {
 }
 const STAGES: Record<Mode, ReturnType<typeof lay>> = {
   wide: lay(PLANS.wide),
+  four: lay(PLANS.four),
   three: lay(PLANS.three),
   two: lay(PLANS.two),
   one: lay(PLANS.one),
 }
 
-// Which plan, and how far to zoom it. The wide plan is used while it fits
-// one screen at a readable size. Below that the widest plan that stays
-// readable fits the width and the page scrolls.
-type Fit = { mode: Mode; zoom: number }
+// Which plan, and how far to zoom it.
+//
+//   1. One screen: the plan whose shape is closest to the window's, when it
+//      fits at a readable size and leaves little of the window empty.
+//   2. Otherwise scroll: the plan with the most columns that stays readable
+//      at the window's width and is taller than the window.
+//   3. Failing both (a very wide window): the closest one screen fit.
+type Fit = { mode: Mode; zoom: number; single: boolean }
+const MODES: readonly Mode[] = ["wide", "four", "three", "two", "one"]
+const SMALLEST = 0.72 // one screen is never zoomed below this
+const READABLE = 0.78 // nor a scrolling plan below this
+const LARGEST = 1.3 // nor a scrolling plan above this
+const EMPTY = 0.15 // the share of the window one screen may leave empty
+
 function measure(): Fit {
   const w = document.documentElement.clientWidth
   const h = window.innerHeight
-  const wide = Math.min(w / STAGES.wide.width, h / STAGES.wide.height)
-  if (wide >= 0.72) return { mode: "wide", zoom: wide }
-  const mode: Mode = w >= 740 ? "three" : w >= 480 ? "two" : "one"
-  return { mode, zoom: Math.min(w / STAGES[mode].width, 1.3) }
+
+  let best: (Fit & { empty: number }) | null = null
+  for (const mode of MODES) {
+    const { width, height } = STAGES[mode]
+    const zoom = Math.min(w / width, h / height)
+    if (zoom < SMALLEST) continue
+    const empty = 1 - (width * height * zoom * zoom) / (w * h)
+    if (!best || empty < best.empty) best = { mode, zoom, single: true, empty }
+  }
+  if (best && best.empty <= EMPTY) return best
+
+  for (const mode of MODES) {
+    const { width, height } = STAGES[mode]
+    if (w / width < READABLE) continue
+    const zoom = Math.min(w / width, LARGEST)
+    if (width * zoom >= 0.9 * w && height * zoom >= h) return { mode, zoom, single: false }
+  }
+  if (best) return best
+  return { mode: "one", zoom: Math.min(w / STAGES.one.width, LARGEST), single: false }
 }
 
 // The conductor's fixed order, from the wide plan: across the columns with a
@@ -278,7 +317,7 @@ export function WidgetWall() {
   useEffect(() => {
     const refit = () => {
       const next = measure()
-      setFit((now) => (now.mode === next.mode && now.zoom === next.zoom ? now : next))
+      setFit((now) => (now.mode === next.mode && now.zoom === next.zoom ? now : next)) // same fit, same object
     }
     const observer = new ResizeObserver(refit)
     observer.observe(document.documentElement)
@@ -394,7 +433,7 @@ export function WidgetWall() {
     <main className="grid min-h-dvh place-items-center overflow-clip bg-canvas" data-phase={phase}>
       <h1
         className="title pointer-events-none fixed inset-0 grid place-items-center leading-none font-semibold tracking-[-0.035em]"
-        style={{ fontSize: stage.title * (fit.mode === "wide" ? fit.zoom : 1) }}
+        style={{ fontSize: stage.title * (fit.single ? fit.zoom : 1) }}
       >
         <span>
           <span className="title-word">Launch</span> <span className="title-word">Day</span>

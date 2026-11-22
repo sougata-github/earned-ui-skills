@@ -42,6 +42,11 @@ wrong on screen, and what fixed it.
   the same tiles in fewer columns, each arrangement laid out by hand so its
   columns end level. A tile is never stretched or shrunk past the widths it
   was checked at.
+- **Never float the wall between empty bands.** A composition made for one
+  screen shape, scaled into a squarer window, sits in the middle with wide
+  blank bands and reads as broken. Keep an arrangement per shape, show one
+  screen only where it leaves little empty, and otherwise fill the width
+  and scroll.
 - **One anatomy.** One title size, one meta size, one number size, one pill
   height, one icon family. Consistency is what makes many tiles read as one
   wall.
