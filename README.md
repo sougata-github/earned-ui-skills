@@ -59,6 +59,10 @@ and the lessons from shipping it.
 
 ## widget-bento-web
 
+<img src="demo-assets/widget-bento-cover.png" alt="A dark wall of 21 live widgets telling one launch day: a calendar, a release pipeline, an invoice being sent, a team chat, signups, revenue, notifications and a rollout slider" width="100%">
+
+<sub>The launch day wall built with the <code>widget-bento-web</code> skill: 21 tiles, one story, every widget stepping through its states.</sub>
+
 Ask your agent for a bento ("a features section with live widgets for this
 product") and the skill takes it through:
 
