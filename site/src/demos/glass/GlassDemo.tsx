@@ -112,8 +112,10 @@ const START: GlassMaterial = {
   blend: 0,
 }
 
-// The site's own plate: clouds in a deep blue sky, made for this demo.
-const IMAGE = { src: "/glass/clouds-3072.avif", fallback: "/glass/clouds-3072.webp" }
+// The plate: clouds under a deep blue sky. The human's own image, widened
+// from a square to 1.8:1 (one side per fill, stitched onto the original)
+// and upscaled 2x.
+const IMAGE = { src: "/glass/sky-3712.avif", fallback: "/glass/sky-3712.webp" }
 
 const WIDGETS = [
   "player",
@@ -544,7 +546,7 @@ export function GlassDemo() {
       {/* Everything the brightness capsule dims. The cursor stays outside. */}
       <div
         ref={sceneRef}
-        className="absolute inset-0 bg-cover bg-center group-data-[fallback=true]/demo:bg-[url(/glass/clouds-3072.webp)]"
+        className="absolute inset-0 bg-cover bg-center group-data-[fallback=true]/demo:bg-[url(/glass/sky-3712.webp)]"
       >
         <canvas
           ref={canvasRef}
