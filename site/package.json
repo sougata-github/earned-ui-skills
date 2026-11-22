@@ -3,9 +3,10 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite --port 3200",
-    "build": "tsc --noEmit && vite build",
-    "typecheck": "tsc --noEmit",
+    "sync": "node scripts/sync-skill.mjs",
+    "dev": "node scripts/sync-skill.mjs && vite --port 3200",
+    "build": "node scripts/sync-skill.mjs && tsc --noEmit && vite build",
+    "typecheck": "node scripts/sync-skill.mjs && tsc --noEmit",
     "preview": "vite preview --port 3200"
   },
   "dependencies": {

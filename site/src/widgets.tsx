@@ -1,5 +1,4 @@
 import { useEffect, useState, type CSSProperties, type ReactNode } from "react"
-import { AnimatePresence, motion } from "motion/react"
 import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react"
 import {
   Add01Icon,
@@ -42,6 +41,8 @@ import {
   UPLOAD,
   type CrewId,
 } from "./story"
+import { Digits, Swap } from "./skill/pieces"
+import type { WidgetProps } from "./skill/wall"
 
 // The launch day wall's widgets. Each one tells one part of the story, is
 // laid out to fill its tile exactly, and steps through a few states when
@@ -55,9 +56,7 @@ import {
 //
 // State changes are explicit and smooth: digits turn like an odometer, text
 // crossfades (a 2px blur only where the old and new text overlap), rows
-// glide to their new slot.
-
-export type WidgetProps = { step: number }
+// glide to their new slot. `Digits` and `Swap` are the skill's own pieces.
 
 const TITLE = "text-[14px] leading-none font-semibold tracking-[-0.01em]"
 const META = "text-[12px] leading-none text-ink-soft"
@@ -81,56 +80,6 @@ function Icon({
   stroke?: number
 }) {
   return <HugeiconsIcon icon={icon} strokeWidth={stroke} className={className} />
-}
-
-const REEL = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
-
-/** A number whose digits turn to their new value, like an odometer. */
-function Digits({ value }: { value: string | number }) {
-  const chars = String(value).split("")
-  return (
-    <span className="digits" role="img" aria-label={String(value)}>
-      {chars.map((ch, i) => {
-        // Keyed from the right, so a digit keeps its reel as the number grows.
-        const k = chars.length - i
-        return /\d/.test(ch) ? (
-          <span key={k} className="digit" aria-hidden>
-            <span className="digit-reel" style={{ transform: `translateY(${-Number(ch) * 10}%)` }}>
-              {REEL.map((d) => (
-                <span key={d}>{d}</span>
-              ))}
-            </span>
-            <span className="invisible">8</span>
-          </span>
-        ) : (
-          <span key={`${k}${ch}`} aria-hidden>
-            {ch}
-          </span>
-        )
-      })}
-    </span>
-  )
-}
-
-/** Text that crossfades to its new value. The trace of blur keeps the two
- *  texts from reading as two objects while they overlap. */
-function Swap({ value, className = "" }: { value: string; className?: string }) {
-  return (
-    <span className={`relative inline-flex ${className}`}>
-      <AnimatePresence mode="popLayout" initial={false}>
-        <motion.span
-          key={value}
-          className="whitespace-nowrap"
-          initial={{ opacity: 0, y: "0.35em", filter: "blur(2px)" }}
-          animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-          exit={{ opacity: 0, y: "-0.35em", filter: "blur(2px)" }}
-          transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-        >
-          {value}
-        </motion.span>
-      </AnimatePresence>
-    </span>
-  )
 }
 
 function Avatar({ who, size = "size-7 text-[11px]" }: { who: CrewId; size?: string }) {

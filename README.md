@@ -17,6 +17,7 @@ workflow to build its own.
 | Skill | What it builds | Status |
 | --- | --- | --- |
 | [`liquid-glass-web`](skills/liquid-glass-web/SKILL.md) | Apple style Liquid Glass on the web with real refraction (WebGL2), not a backdrop blur | Ready |
+| [`widget-bento-web`](skills/widget-bento-web/SKILL.md) | A bento of live widgets where every tile proves something the page says, composed on every screen | Ready |
 
 ## Install
 
@@ -31,6 +32,7 @@ Just one skill:
 
 ```bash
 npx skills add sougata-github/earned-ui-skills --skill liquid-glass-web
+npx skills add sougata-github/earned-ui-skills --skill widget-bento-web
 ```
 
 Or copy a folder from `skills/` into your agent's skills directory.
@@ -54,6 +56,35 @@ Inside: a dependency free WebGL2 renderer (squircle edge profile, Snell's
 law per colour channel, frost, Fresnel rim, fixed light, contact shadow,
 shapes that melt together), a React tuning lab, Apple's rules distilled,
 and the lessons from shipping it.
+
+## widget-bento-web
+
+Ask your agent for a bento ("a features section with live widgets for this
+product") and the skill takes it through:
+
+1. The page's claims, one story and one cast, so every tile belongs
+2. The frame: rounded tiles on a canvas, or cells ruled by hairlines
+3. A lab with the empty bento first. You approve which tiles and how big
+   before any content exists
+4. One widget at a time, each built at its real size and shown in the lab
+   in both themes. You click through its states, then tweak and paste the
+   values back as JSON, or keep the current ones
+5. Alive by state: each widget steps through a few states, and one
+   conductor wakes two tiles a beat in a fixed order
+6. An arrangement per screen shape. Tiles are rearranged, never squeezed,
+   and every column ends level
+7. A verification checklist
+
+Inside: a small React wall engine (plans, the fit to any window, the
+conductor, an opening where the tiles land like a home screen on unlock), a
+number that rolls and text that swaps, a lab, the forms a tile can take with
+when to use each, and the lessons from building it.
+
+The wall in `site/` is the skill's own lab: 21 tiles telling one launch day.
+
+```bash
+cd site && pnpm install && pnpm dev   # localhost:3200, add ?lab for the lab
+```
 
 ## Credits
 
