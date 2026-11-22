@@ -78,3 +78,7 @@ every tile that shares the part.
 The lab is also the best demo. For a recording, use a window that matches
 the widest plan's shape so the wall fills it, load once so the fonts are
 cached, then replay the opening.
+
+For a still, never capture the live wall: something is always mid change (a
+digit half rolled, a word half swapped). Turn the conductor off and pose the
+wall with `start`, the step each tile should show, then capture.

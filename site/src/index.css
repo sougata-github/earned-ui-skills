@@ -48,3 +48,12 @@ body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
 }
+
+/* A posed wall for a capture (?still): nothing loops and nothing pops in,
+   so every mark is drawn from the first frame. */
+.still .caret,
+.still .dots > span,
+.still .spin,
+.still .pop {
+  animation: none;
+}

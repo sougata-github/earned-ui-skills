@@ -248,6 +248,9 @@ export type WallProps = {
   order?: readonly string[]
   /** The conductor runs. */
   live?: boolean
+  /** The step each tile starts at. With `live` off this poses the wall, for
+   *  a still capture with nothing caught mid change. */
+  start?: Readonly<Record<string, number>>
   /** Show this plan whatever the window (a lab's control). */
   plan?: string
   /** Width taken by a panel on the right, px (a lab's controls). */
@@ -265,6 +268,7 @@ export function Wall({
   title,
   order,
   live = true,
+  start,
   plan: forced,
   inset = 0,
   replay = 0,
@@ -274,7 +278,7 @@ export function Wall({
   const stageEl = useRef<HTMLDivElement>(null)
   const [view, setView] = useState(() => viewport(inset))
   const [phase, setPhase] = useState<Phase>("blank")
-  const [steps, setSteps] = useState<Record<string, number>>({})
+  const [steps, setSteps] = useState<Record<string, number>>(() => ({ ...start }))
   const turn = useRef(0)
 
   const stages = useMemo(() => plans.map((p) => lay(p, tiles, gap)), [plans, tiles, gap])
@@ -283,10 +287,10 @@ export function Wall({
   const wakes = useMemo(() => order ?? wakeOrder(plans[0]), [order, plans])
 
   // What the entrance reads when it runs, kept current.
-  const now = useRef({ stage, zoom: fit.zoom, opens: title !== undefined })
+  const now = useRef({ stage, zoom: fit.zoom, opens: title !== undefined, start })
   useEffect(() => {
-    now.current = { stage, zoom: fit.zoom, opens: title !== undefined }
-  }, [stage, fit.zoom, title])
+    now.current = { stage, zoom: fit.zoom, opens: title !== undefined, start }
+  }, [stage, fit.zoom, title, start])
 
   // Refit when the window changes. The observer also catches a scrollbar
   // arriving, which changes the width without a resize event.
@@ -358,7 +362,7 @@ export function Wall({
     const play = () => {
       stop()
       turn.current = 0
-      setSteps({})
+      setSteps({ ...now.current.start })
       if (reduced || !now.current.opens) {
         setPhase("live")
         return

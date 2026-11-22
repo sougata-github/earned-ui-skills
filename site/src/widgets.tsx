@@ -615,10 +615,16 @@ export function Chat({ step }: WidgetProps) {
 
 // ------------------------------------------------------------ column 4
 
+/** The one clock on the wall. Paused with the conductor, so a capture never
+ *  catches a digit mid roll. */
+export const clock = { paused: false }
+
 export function Countdown() {
   const [left, setLeft] = useState(41 * 60 + 58)
   useEffect(() => {
-    const id = window.setInterval(() => setLeft((s) => (s > 0 ? s - 1 : 41 * 60 + 58)), 1000)
+    const id = window.setInterval(() => {
+      if (!clock.paused) setLeft((s) => (s > 0 ? s - 1 : 41 * 60 + 58))
+    }, 1000)
     return () => window.clearInterval(id)
   }, [])
   const two = (v: number) => String(v).padStart(2, "0")

@@ -9,8 +9,12 @@ import { Wall, type Plan, type Tile } from "./skill/wall"
 // arranged on each screen shape. The engine (the fit, the opening, the
 // conductor) is the skill's own `wall.tsx`.
 //
-// Keys: Space plays the opening again, D switches the theme.
-// Add ?lab to the address for the bento lab, with its controls.
+// Keys: Space plays the opening again, D switches the theme, P pauses and
+// resumes (wait a second after pausing and nothing is mid change).
+//
+// In the address: ?lab for the bento lab with its controls, ?dark to start
+// in the dark theme, ?still for a posed wall with no opening and nothing
+// moving, for a clean capture.
 
 type TileId =
   | "calendar"
@@ -154,8 +158,34 @@ const PLANS = [
 
 const TITLE = "Launch Day"
 
+// The pose for a still: the end of launch day, every tile on a settled
+// state that agrees with the others (the inbox at 7, as the chat says).
+const POSE: Partial<Record<TileId, number>> = {
+  search: 1,
+  seats: 1,
+  deploy: 1,
+  pipeline: 4,
+  regions: 3,
+  upload: 2,
+  invoice: 2,
+  voice: 2,
+  platforms: 1,
+  reviews: 1,
+  latency: 2,
+  revenue: 2,
+  notifications: 4,
+  rollout: 2,
+  inbox: 2,
+}
+const STILL = new URLSearchParams(window.location.search).has("still")
+
 export function WidgetWall() {
   const [replay, setReplay] = useState(0)
+  const [live, setLive] = useState(!STILL)
+
+  useEffect(() => {
+    W.clock.paused = !live
+  }, [live])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -166,12 +196,22 @@ export function WidgetWall() {
       if (e.key === "d" && !e.metaKey && !e.ctrlKey) {
         document.documentElement.classList.toggle("dark")
       }
+      if (e.key === "p" && !e.metaKey && !e.ctrlKey) setLive((on) => !on)
     }
     window.addEventListener("keydown", onKey)
     return () => window.removeEventListener("keydown", onKey)
   }, [])
 
-  return <Wall tiles={TILES} plans={PLANS} title={TITLE} replay={replay} />
+  return (
+    <Wall
+      tiles={TILES}
+      plans={PLANS}
+      title={STILL ? undefined : TITLE}
+      live={live}
+      start={STILL ? POSE : undefined}
+      replay={replay}
+    />
+  )
 }
 
 /** The same wall in the skill's lab: controls, empty tiles, Copy as JSON. */
