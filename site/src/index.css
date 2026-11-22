@@ -181,11 +181,12 @@ body {
 }
 
 /* Text that glides (a chat line, a notification). Without a layer of its
-   own, the browser gives it one as the move starts and takes it away as it
-   ends, and the words shift by a fraction of a pixel each time. Keep the
-   layer for these rows only, never for everything. */
+   own the browser gives it one for the move and redraws the words on the
+   pixel grid when the move ends, so they shift by a fraction of a pixel
+   each time. will-change keeps the layer and stops the redraw. For these
+   rows only, never for everything. */
 .moving-text {
-  backface-visibility: hidden;
+  will-change: transform;
 }
 
 /* A mark that pops in when its state arrives. */

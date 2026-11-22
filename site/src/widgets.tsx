@@ -614,16 +614,14 @@ export function Chat({ step }: WidgetProps) {
   const message = (k: number) => CHAT[((k % n) + n) % n]
   // One above and one below the window stay mounted, unseen, so a line
   // glides in from where it already is. Each row is `moving-text`: it keeps
-  // its own layer, so its words never shift as a glide starts or ends.
+  // its own layer for good, so its words never shift as a glide ends.
   const keys = Array.from({ length: CHAT_ROWS + 2 }, (_, o) => step - 1 + o)
   const typing = message(step + CHAT_ROWS).who
   return (
     <div className="flex h-full flex-col justify-between">
       <div className="flex items-center justify-between">
         <p className={TITLE}>#launch</p>
-        <span className={`${META} flex items-center gap-1.5`}>
-          <span className="size-1.5 rounded-full bg-green" />5 online
-        </span>
+        <span className={META}>5 online</span>
       </div>
 
       <div className="relative" style={{ height: CHAT_ROWS * CHAT_SLOT - 8 }}>
@@ -678,10 +676,7 @@ export function Countdown() {
       <p className="text-[38px] leading-none font-semibold tracking-[-0.03em]">
         <Digits value={`00:${two(Math.floor(left / 60))}:${two(left % 60)}`} />
       </p>
-      <p className="flex items-center gap-2 text-[12px] leading-none text-on-dark-soft">
-        <span className="size-1.5 rounded-full bg-green" />
-        All checks green
-      </p>
+      <p className="text-[12px] leading-none text-on-dark-soft">All checks green</p>
     </div>
   )
 }
@@ -721,19 +716,16 @@ export function Platforms({ step }: WidgetProps) {
         <p className={TITLE}>Shipping to</p>
         <Swap value={ios ? "3 of 3 live" : "2 of 3 live"} className={META} />
       </div>
-      {/* Three small cards, one per platform: its glyph in its own colour,
-          and a dot that turns green when it is live. */}
+      {/* Three small cards, one per platform. Live is its glyph in its own
+          colour, pending is a spinner in soft ink. No status dot as well. */}
       <div className="grid grid-cols-3 gap-2.5">
         {PLATFORMS.map((p, i) => {
           const live = i < 2 || ios
           return (
             <div
               key={p.name}
-              className={`relative flex h-[52px] flex-col items-center justify-center gap-1.5 rounded-[10px] ${CARD}`}
+              className={`flex h-[52px] flex-col items-center justify-center gap-1.5 rounded-[10px] ${CARD}`}
             >
-              <span
-                className={`absolute top-1.5 right-1.5 size-1.5 rounded-full transition-colors ${GLIDE} ${live ? "bg-green" : "bg-ink-faint"}`}
-              />
               <span key={String(live)} className={`pop grid place-items-center ${live ? p.tone : "text-ink-soft"}`}>
                 {live ? <Icon icon={p.icon} className="size-[18px]" /> : <Spinner className="size-[18px]" />}
               </span>
@@ -886,8 +878,9 @@ export function Notifications({ step }: WidgetProps) {
     <div className="flex h-full flex-col justify-between">
       <div className="flex items-center justify-between">
         <p className={TITLE}>Notifications</p>
-        <span className={`${PILL} bg-rose text-on-dark`}>
+        <span className={`${PILL} gap-1 bg-rose/14 text-rose-ink`}>
           <Digits value={step + 3} />
+          new
         </span>
       </div>
       <div className="relative" style={{ height: 3 * NOTE_SLOT - 8 }}>

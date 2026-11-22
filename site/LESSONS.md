@@ -24,6 +24,12 @@ wrong on screen, and what fixed it.
   number.
 - **A state is said once.** The button turns green and says Sent. A tick
   next to the word says it twice.
+- **No status dots.** A small green dot beside a label or in a card's
+  corner is filler. The state is already in the words, the icon or the
+  colour.
+- **One pill.** Every count and delta uses the same soft tinted pill, and a
+  count says what it counts ("7 new"). A lone solid badge with a bare
+  number looks like it came from another kit.
 - **Nothing is random.** Sizes, delays, order and data are fixed. Random
   looks different on every load and cannot be reviewed.
 
@@ -60,10 +66,11 @@ wrong on screen, and what fixed it.
 - **A full window from the first frame.** A message list starts full and
   scrolls. It never starts empty and fills from the bottom.
 - **Moving text keeps its own layer.** A row of text that glides gets a
-  layer as the move starts and loses it as the move ends, and the words
-  shift by a fraction of a pixel each time. Give those rows a permanent
-  layer (`backface-visibility: hidden`). Do it for those rows only, never
-  for everything.
+  layer for the move, and when the move ends the browser redraws the words
+  on the pixel grid, so they shift by a fraction of a pixel each time.
+  `will-change: transform` on those rows keeps the layer and stops the
+  redraw (`backface-visibility: hidden` was not enough here). Do it for
+  those rows only, never for everything.
 - **Scale the stage with zoom, not a transform.** Text stays sharp. Under
   zoom, move things with explicit transforms from known positions, not with
   measured layout animation.
