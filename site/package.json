@@ -7,8 +7,7 @@
     "content": "velite --clean --strict",
     "dev": "node scripts/sync-skill.mjs && velite --clean && next dev --port 3201",
     "build": "node scripts/sync-skill.mjs && velite --clean --strict && next build",
-    "typecheck": "node scripts/sync-skill.mjs && velite --clean --strict && tsc --noEmit",
-    "art": "node scripts/art/render.mjs"
+    "typecheck": "node scripts/sync-skill.mjs && velite --clean --strict && tsc --noEmit"
   },
   "dependencies": {
     "@hugeicons/core-free-icons": "^4.4.0",

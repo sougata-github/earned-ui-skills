@@ -123,5 +123,4 @@ The code and the skills are MIT licensed.
 
 The images in `demo-assets/` and `site/public/posters/liquid-glass-web.webp`
 are not. They show artwork that belongs to its owner, all rights reserved: do
-not copy, reuse or redistribute them. The backgrounds in `site/public/glass/`
-are drawn by this repository's own shader and are MIT like the rest.
+not copy, reuse or redistribute them.

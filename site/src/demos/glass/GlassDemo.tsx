@@ -32,9 +32,8 @@ import { GlassStage, materializeCurve, measureShapes, type GlassMaterial } from 
 // panel is left out and the material tunes itself. On a phone the bento
 // stacks into two columns.
 //
-// The script plays on its own and loops. The bar at the bottom left stops
-// it (the sliders then work by hand) and swaps the image. Keys: Space plays
-// or stops, 1 2 3 swap the image.
+// The script plays on its own and loops. The button at the bottom left stops
+// it, and the sliders then work by hand. Space does the same.
 
 const cn = (...classes: (string | false | null | undefined)[]) => classes.filter(Boolean).join(" ")
 
@@ -113,12 +112,8 @@ const START: GlassMaterial = {
   blend: 0,
 }
 
-// The site's own backgrounds, drawn by scripts/art/wallpaper.html.
-const IMAGES = [
-  { name: "Dusk", src: "/glass/dusk.avif", fallback: "/glass/dusk.webp" },
-  { name: "Tide", src: "/glass/tide.avif", fallback: "/glass/tide.webp" },
-  { name: "Grove", src: "/glass/grove.avif", fallback: "/glass/grove.webp" },
-]
+// The site's own plate: clouds in a deep blue sky, made for this demo.
+const IMAGE = { src: "/glass/clouds-3072.avif", fallback: "/glass/clouds-3072.webp" }
 
 const WIDGETS = [
   "player",
@@ -362,13 +357,10 @@ export function GlassDemo() {
 
     const stage = new GlassStage(canvas)
     stage.setMaterialize(0)
-    let imageIndex = 0
     let loaded = false
-    const loadImage = (i: number) =>
-      stage.setImage(IMAGES[i].src, IMAGES[i].fallback).then(() => {
-        loaded = true
-      })
-    loadImage(0)
+    stage.setImage(IMAGE.src, IMAGE.fallback).then(() => {
+      loaded = true
+    })
 
     const q = <T extends Element>(name: string) =>
       root.querySelector<T>(`[data-target="${name}"]`)
@@ -509,25 +501,15 @@ export function GlassDemo() {
       if (playFrom === null) start()
       else stop()
     }
-    const pick = (i: number) => {
-      if (i < 0 || i >= IMAGES.length || i === imageIndex) return
-      imageIndex = i
-      root.dataset.image = String(i)
-      loadImage(i)
-    }
     const onKey = (e: KeyboardEvent) => {
       if (e.code === "Space") {
         e.preventDefault()
         toggle()
       }
-      const n = Number(e.key)
-      if (n >= 1 && n <= IMAGES.length) pick(n - 1)
     }
-    // The bar's buttons, by delegation: this effect owns the state.
+    // The button, by delegation: this effect owns the state.
     const onClick = (e: MouseEvent) => {
-      const action = (e.target as HTMLElement).closest<HTMLElement>("[data-action]")?.dataset.action
-      if (action === "toggle") toggle()
-      else if (action) pick(Number(action))
+      if ((e.target as HTMLElement).closest("[data-action=toggle]")) toggle()
     }
     window.addEventListener("keydown", onKey)
     root.addEventListener("click", onClick)
@@ -552,7 +534,6 @@ export function GlassDemo() {
       data-playing-track="false"
       data-empty="true"
       data-focused="false"
-      data-image="0"
       className="group/demo fixed inset-0 overflow-hidden bg-on-art-inverse font-sans text-on-art select-none"
     >
       <style>
@@ -563,7 +544,7 @@ export function GlassDemo() {
       {/* Everything the brightness capsule dims. The cursor stays outside. */}
       <div
         ref={sceneRef}
-        className="absolute inset-0 bg-cover bg-center group-data-[fallback=true]/demo:bg-[url(/glass/dusk.webp)]"
+        className="absolute inset-0 bg-cover bg-center group-data-[fallback=true]/demo:bg-[url(/glass/clouds-3072.webp)]"
       >
         <canvas
           ref={canvasRef}
@@ -679,35 +660,16 @@ export function GlassDemo() {
         </div>
       </div>
 
-      {/* The bar: stop or play the script, and swap the image. Solid, like
-          the panel: a tool, not part of the scene. */}
-      <div className="absolute bottom-3 left-3 flex h-9 items-center gap-1 rounded-full bg-on-art-inverse/85 p-1 text-[12px] font-medium ring-1 ring-on-art/10 group-data-[fallback=true]/demo:hidden sm:bottom-4 sm:left-4">
-        <button
-          type="button"
-          data-action="toggle"
-          className="h-7 cursor-pointer rounded-full px-3 transition-colors duration-150 hover:bg-on-art/10"
-        >
-          <span className="group-data-[playing=true]/demo:hidden">Play the script</span>
-          <span className="hidden group-data-[playing=true]/demo:inline">Stop and try it</span>
-        </button>
-        <span className="h-4 w-px bg-on-art/15" />
-        {IMAGES.map((image, i) => (
-          <button
-            key={image.name}
-            type="button"
-            data-action={i}
-            aria-label={`Background: ${image.name}`}
-            className={cn(
-              "h-7 cursor-pointer rounded-full px-2.5 text-on-art/60 transition-colors duration-150 hover:bg-on-art/10 hover:text-on-art",
-              i === 0 && "group-data-[image=0]/demo:bg-on-art group-data-[image=0]/demo:text-on-art-inverse",
-              i === 1 && "group-data-[image=1]/demo:bg-on-art group-data-[image=1]/demo:text-on-art-inverse",
-              i === 2 && "group-data-[image=2]/demo:bg-on-art group-data-[image=2]/demo:text-on-art-inverse"
-            )}
-          >
-            {image.name}
-          </button>
-        ))}
-      </div>
+      {/* Stop or play the script. Solid, like the panel: a tool, not part
+          of the scene. */}
+      <button
+        type="button"
+        data-action="toggle"
+        className="absolute bottom-3 left-3 h-9 cursor-pointer rounded-full bg-on-art-inverse/85 px-4 text-[12px] font-medium ring-1 ring-on-art/10 transition-colors duration-150 group-data-[fallback=true]/demo:hidden hover:bg-on-art-inverse sm:bottom-4 sm:left-4"
+      >
+        <span className="group-data-[playing=true]/demo:hidden">Play the script</span>
+        <span className="hidden group-data-[playing=true]/demo:inline">Stop and try it</span>
+      </button>
 
       {/* The scripted cursor, its hotspot at its own top left: an arrow,
           or an I-beam while it types. */}

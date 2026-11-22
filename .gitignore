@@ -10,4 +10,4 @@ site/tsconfig.tsbuildinfo
 site/public/llms.txt
 site/public/skills/
 site/public/static/
-site/scripts/art/raw/
+site/art/raw/

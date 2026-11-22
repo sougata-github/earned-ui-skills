@@ -193,18 +193,46 @@ body {
 
 /* ------------------------------------------------------------ FAQ */
 
-/* Native disclosure: a closed answer is still in the page, and find in page
-   opens it. */
-.faq summary {
-  list-style: none;
-  cursor: pointer;
+/* An answer's row grows from 0fr to 1fr: its own height, nothing measured.
+   Opening is an entrance (the row first, the text fading in just behind
+   it). Closing is quicker, with the text gone ahead of the row. */
+.faq-row {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 260ms var(--ease-out-quint);
 }
-.faq summary::-webkit-details-marker {
-  display: none;
+.faq-clip {
+  min-height: 0;
+  overflow: hidden;
 }
-.faq .faq-mark {
-  transition: rotate 200ms var(--ease-out-quint);
+.faq-answer {
+  opacity: 0;
+  transform: translateY(-4px);
+  transition:
+    opacity 140ms ease-out,
+    transform 260ms var(--ease-out-quint);
 }
-.faq[open] .faq-mark {
+.faq-mark {
+  transition: rotate 260ms var(--ease-out-quint);
+}
+.faq[data-open="true"] .faq-row {
+  grid-template-rows: 1fr;
+  transition-duration: 360ms;
+}
+.faq[data-open="true"] .faq-answer {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 280ms ease-out 60ms,
+    transform 360ms var(--ease-out-quint);
+}
+.faq[data-open="true"] .faq-mark {
   rotate: 45deg;
+}
+@media (prefers-reduced-motion: reduce) {
+  .faq-row,
+  .faq-answer,
+  .faq-mark {
+    transition: none;
+  }
 }
