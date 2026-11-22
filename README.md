@@ -4,7 +4,7 @@
 
 <sub>Liquid glass built with the <code>liquid-glass-web</code> skill: real WebGL2 refraction, tuned live in a lab.</sub>
 
-<img src="demo-assets/widget-bento-wall.png" alt="A wall of 21 live widgets telling one launch day: a calendar, a release pipeline, an invoice ready to send, a team chat, signups, revenue, notifications and a rollout slider" width="100%">
+<img src="demo-assets/widget-bento-wall-dark.png" alt="A dark wall of 21 live widgets telling one launch day: a calendar, a finished release pipeline, a sent invoice, a team chat, signups, revenue, notifications and a rollout at 100%" width="100%">
 
 <sub>The launch day wall built with the <code>widget-bento-web</code> skill: 21 tiles, one story, every widget stepping through its states.</sub>
 
