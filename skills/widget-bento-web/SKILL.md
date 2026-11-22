@@ -241,9 +241,10 @@ fix: `references/lessons.md`.
 ## Related skills and sources
 
 - `liquid-glass-web` in this repo, when a tile or a panel over it is glass.
-- Emil Kowalski's `animate` and `review-animations` skills, for the easing
-  and timing of any motion added around the wall:
-  `npx skills add emilkowalski/skills`.
+- Emil Kowalski's `animate` and `review-animations` skills
+  ([emilkowalski/skills](https://github.com/emilkowalski/skills)), for the
+  easing and timing of any motion added around the wall, if the human
+  already has them.
 - Apple's Human Interface Guidelines on
   [widgets](https://developer.apple.com/design/human-interface-guidelines/widgets),
   for what belongs in a small glanceable surface.

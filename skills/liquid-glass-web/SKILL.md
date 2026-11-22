@@ -231,10 +231,11 @@ Each one is a real failure and its fix. Details: `references/lessons.md`.
 
 ## Related skills and sources
 
-- Emil Kowalski's `apple-design` skill, for springs, gestures and motion
-  around the glass: `npx skills add emilkowalski/skills --skill apple-design`.
-  Its materials section approximates glass with a backdrop blur. For glass,
-  this skill takes precedence.
+- Emil Kowalski's `apple-design` skill
+  ([emilkowalski/skills](https://github.com/emilkowalski/skills)), for
+  springs, gestures and motion around the glass, if the human already has
+  it. Its materials section approximates glass with a backdrop blur. For
+  glass, this skill takes precedence.
 - Emil Kowalski's `review-animations`, for any motion added around glass.
 - Apple: [Liquid Glass overview](https://developer.apple.com/documentation/technologyoverviews/liquid-glass),
   [Adopting Liquid Glass](https://developer.apple.com/documentation/technologyoverviews/adopting-liquid-glass),
