@@ -89,7 +89,8 @@ story.
 
 ## The site
 
-`site/` is the showcase: a list of the skills, a page for each with its live
+[earned-ui-skills.vercel.app](https://earned-ui-skills.vercel.app) is the
+showcase, built from `site/`: a list of the skills, a page for each with its live
 demo, and the demos on their own. It is a Next.js static export, and it runs
 on the skills' own assets, copied in before every dev, build and typecheck,
 so what ships in a skill is what is seen there.
@@ -101,9 +102,10 @@ cd site && pnpm install && pnpm dev   # localhost:3201
 - `/` lists the skills, `/skills/<name>/` is a skill's page
 - `/demo/widget-bento-web/` is the wall (add `?lab` for the bento lab)
 - `/demo/liquid-glass-web/` is the glass demo
-- `pnpm build` writes the static site to `site/out`. Set
-  `NEXT_PUBLIC_SITE_URL` to the real origin first: canonical URLs, the
-  sitemap, robots.txt and llms.txt are built from it
+- `pnpm build` writes the static site to `site/out`. Canonical URLs, the
+  sitemap, robots.txt and llms.txt are built for
+  `https://earned-ui-skills.vercel.app`. Set `NEXT_PUBLIC_SITE_URL` to build
+  for another origin
 - Content is MDX in `site/content`, built by Velite, which also writes a
   Markdown twin of every skill page and an `llms.txt`
 

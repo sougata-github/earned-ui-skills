@@ -1,9 +1,10 @@
 // The site's facts, in one place. Every page, the sitemap, robots.txt,
 // llms.txt and the structured data read from here.
 
-/** The public origin, no trailing slash. Set NEXT_PUBLIC_SITE_URL for a
- *  real build: the fallback is a placeholder on a reserved domain. */
-export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://earned-ui-skills.example").replace(
+/** The public origin, no trailing slash. Canonical URLs, the sitemap,
+ *  robots.txt, llms.txt and the structured data are all built from it. Set
+ *  NEXT_PUBLIC_SITE_URL to build for another origin (a custom domain). */
+export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://earned-ui-skills.vercel.app").replace(
   /\/$/,
   ""
 )
