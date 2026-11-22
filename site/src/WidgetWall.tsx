@@ -5,27 +5,27 @@ import type { WidgetProps } from "./widgets"
 
 // The widget-bento-web lab's opening, as one sequence:
 //
-//   1. Blank: nothing but the off white canvas.
-//   2. Title: "Launch Day" resolves out of a blur at the centre, holds, then
-//      passes toward the viewer and is gone.
-//   3. Roll: the wall arrives. Each column rolls in from off screen, a full
-//      set of tiles passing by, in alternating directions, one gesture on a
-//      critically damped spring: it starts from rest, runs, and settles with
-//      no overshoot.
+//   1. Blank: nothing but the canvas.
+//   2. Title: "Launch Day" comes quietly into focus at the centre, holds,
+//      then recedes.
+//   3. Land: the wall arrives the way a home screen does on unlock. Every
+//      tile starts enlarged and pushed out from the centre, past the edges
+//      of the screen, and flies in to its place, the centre first and the
+//      corners a moment later. One gesture, a long soft settle.
 //   4. Live: the wall rests as one composed screen and a conductor wakes two
 //      widgets every beat, in a fixed order, never two neighbours.
 //
 // The wall is a fixed 1440 x 810 stage, zoomed to fit the window, so the
-// composed screen is exact at any size. Nothing is random: sizes, delays
-// and the order are fixed.
+// composed screen is exact at any size. There is one set of tiles, laid out
+// once: the entrance is a transform on each, so nothing reflows. Nothing is
+// random: sizes, delays and the order are fixed.
 //
 // Keys: Space plays the opening again, D switches the theme.
 
 const STAGE_W = 1440
 const STAGE_H = 810
 const PAD = 24
-const GAP = 14
-const SET = STAGE_H - 2 * PAD // 762: every column's tiles and gaps add up to this
+const GAP = 14 // every column's tiles and gaps add up to 762, the stage less its padding
 
 type Tile = {
   id: string
@@ -34,8 +34,6 @@ type Tile = {
   dark?: boolean
   /** Padding inside the tile. A tile that is one nested card uses less. */
   pad?: string
-  /** No grey tile around it: the widget is its own surface. */
-  bare?: boolean
 }
 type Row = Tile | { pair: [Tile, Tile]; h: number }
 type Column = { w: number; rows: Row[] }
@@ -79,8 +77,8 @@ const COLUMNS: Column[] = [
       { id: "countdown", Widget: W.Countdown, h: 168, dark: true },
       { id: "flags", Widget: W.Flags, h: 152, pad: "p-3" },
       { id: "platforms", Widget: W.Platforms, h: 122 },
-      { id: "reviews", Widget: W.Reviews, h: 140 },
-      { id: "latency", Widget: W.Latency, h: 124 },
+      { id: "reviews", Widget: W.Reviews, h: 130 },
+      { id: "latency", Widget: W.Latency, h: 134 },
     ],
   },
   {
@@ -95,6 +93,29 @@ const COLUMNS: Column[] = [
 ]
 
 const tilesOf = (row: Row): Tile[] => ("pair" in row ? row.pair : [row])
+
+// Where each tile's centre rests, from the layout itself (stage pixels), so
+// the entrance never has to measure the page.
+const CENTRES = (() => {
+  const out: Record<string, readonly [number, number]> = {}
+  let x = PAD
+  for (const column of COLUMNS) {
+    let y = PAD
+    for (const row of column.rows) {
+      const tiles = tilesOf(row)
+      const w = (column.w - GAP * (tiles.length - 1)) / tiles.length
+      tiles.forEach((tile, i) => {
+        out[tile.id] = [x + i * (w + GAP) + w / 2, y + row.h / 2]
+      })
+      y += row.h + GAP
+    }
+    x += column.w + GAP
+  }
+  return out
+})()
+const FAR = Math.max(
+  ...Object.values(CENTRES).map(([x, y]) => Math.hypot(x - STAGE_W / 2, y - STAGE_H / 2))
+)
 
 // The conductor's fixed order: across the columns with a column skipped
 // each time, so two changes in a row are never neighbours. Each beat wakes
@@ -112,20 +133,27 @@ const ORDER = (() => {
 })()
 
 // The timeline, ms.
-const TITLE_IN = 500
-const TITLE_OUT = 2700
-const ROLL_AT = 3050
-const STAGGER = 0.09 // s between columns
-const OMEGA = 2.7 // the roll's spring rate, 1/s. Lower is more graceful
-const ROLL_FOR = 3.1 // s until a column counts as settled
-const BEAT = 520 // ms between two wakes
+const TITLE_IN = 400
+const TITLE_OUT = 2400
+const LAND_AT = 2650
+const LAND_FOR = 1200 // one tile's flight
+const RIPPLE = 150 // the farthest tile leaves this long after the centre one
+const BEAT = 520 // between two wakes
+
+// The flight: how far out a tile starts (a share of its distance from the
+// centre), how enlarged, and the curve it lands on. Fast at first, then a
+// long soft settle, no overshoot.
+const PUSH = 0.9
+const SCALE = 1.5
+const LAND = "cubic-bezier(0.2, 0.9, 0.2, 1)"
 
 type Phase = "blank" | "title" | "out" | "wall" | "live"
 
 const TileView = memo(function TileView({ tile, step }: { tile: Tile; step: number }) {
   return (
     <section
-      className={`min-w-0 flex-1 rounded-[28px] ${tile.pad ?? "p-[18px]"} ${tile.dark ? "bg-tile-dark text-on-dark" : "bg-tile"}`}
+      data-tile={tile.id}
+      className={`tile min-w-0 flex-1 rounded-[28px] ${tile.pad ?? "p-[18px]"} ${tile.dark ? "bg-tile-dark text-on-dark" : "bg-tile"}`}
       style={{ height: tile.h }}
     >
       <tile.Widget step={step} />
@@ -133,24 +161,8 @@ const TileView = memo(function TileView({ tile, step }: { tile: Tile; step: numb
   )
 })
 
-function TileSet({ column, steps }: { column: Column; steps?: Record<string, number> }) {
-  return (
-    <>
-      {column.rows.map((row, r) => (
-        <div key={r} className="flex shrink-0" style={{ gap: GAP, height: row.h }}>
-          {tilesOf(row).map((tile) => (
-            <TileView key={tile.id} tile={tile} step={steps?.[tile.id] ?? 0} />
-          ))}
-        </div>
-      ))}
-    </>
-  )
-}
-
 export function WidgetWall() {
   const stage = useRef<HTMLDivElement>(null)
-  const strips = useRef<(HTMLDivElement | null)[]>([])
-  const extras = useRef<(HTMLDivElement | null)[]>([])
   const [phase, setPhase] = useState<Phase>("blank")
   const [steps, setSteps] = useState<Record<string, number>>({})
 
@@ -158,39 +170,21 @@ export function WidgetWall() {
     const el = stage.current
     if (!el) return
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches
-    const up = (i: number) => i % 2 === 0
-    // A strip holds two sets of the column's tiles. One moving up rests on
-    // its second set, one moving down on its first.
-    const rest = COLUMNS.map((_, i) => (up(i) ? -(SET + GAP) : 0))
-    let zoom = 1
-    let raf = 0
+    const tiles = Array.from(el.querySelectorAll<HTMLElement>("[data-tile]"))
+    let flights: Animation[] = []
     let beat = 0
     const timers: number[] = []
 
     const fit = () => {
-      zoom = Math.min(window.innerWidth / STAGE_W, window.innerHeight / STAGE_H)
-      el.style.zoom = String(zoom)
-    }
-    const place = (ys: number[]) => {
-      strips.current.forEach((strip, i) => {
-        if (strip) strip.style.transform = `translate3d(0, ${ys[i]}px, 0)`
-      })
-    }
-    const showExtras = (opacity: number[] | null) => {
-      extras.current.forEach((extra, i) => {
-        if (!extra) return
-        extra.style.visibility = opacity ? "visible" : "hidden"
-        extra.style.opacity = opacity ? String(opacity[i]) : "0"
-      })
+      el.style.zoom = String(Math.min(window.innerWidth / STAGE_W, window.innerHeight / STAGE_H))
     }
     const stop = () => {
-      cancelAnimationFrame(raf)
+      flights.forEach((flight) => flight.cancel())
+      flights = []
       window.clearInterval(beat)
       timers.splice(0).forEach((t) => window.clearTimeout(t))
     }
     const live = () => {
-      place(rest)
-      showExtras(null)
       setPhase("live")
       if (reduced) return
       let n = 0
@@ -201,6 +195,37 @@ export function WidgetWall() {
         setSteps((s) => ({ ...s, [a]: (s[a] ?? 0) + 1, [b]: (s[b] ?? 0) + 1 }))
       }, BEAT)
     }
+    const land = () => {
+      setPhase("wall")
+      for (const tile of tiles) {
+        const [cx, cy] = CENTRES[tile.dataset.tile ?? ""] ?? [STAGE_W / 2, STAGE_H / 2]
+        const dx = cx - STAGE_W / 2
+        const dy = cy - STAGE_H / 2
+        // The centre leaves first: the wall opens outward as it lands.
+        const delay = (Math.hypot(dx, dy) / FAR) * RIPPLE
+        const timing = { delay, fill: "backwards" } as const
+        flights.push(
+          tile.animate(
+            [
+              { transform: `translate(${dx * PUSH}px, ${dy * PUSH}px) scale(${SCALE})` },
+              { transform: "translate(0px, 0px) scale(1)" },
+            ],
+            { ...timing, duration: LAND_FOR, easing: LAND }
+          ),
+          // Seen and sharp well before it comes to rest.
+          tile.animate([{ opacity: 0 }, { opacity: 1 }], {
+            ...timing,
+            duration: 420,
+            easing: "cubic-bezier(0.33, 1, 0.68, 1)",
+          }),
+          tile.animate([{ filter: "blur(10px)" }, { filter: "blur(0px)" }], {
+            ...timing,
+            duration: 560,
+            easing: "cubic-bezier(0.33, 1, 0.68, 1)",
+          })
+        )
+      }
+    }
 
     const play = () => {
       stop()
@@ -210,43 +235,10 @@ export function WidgetWall() {
         return
       }
       setPhase("blank")
-      // Where the screen's edges are, in the stage's own pixels: the strips
-      // start just past them, whatever the window's shape.
-      const bar = Math.max(0, (window.innerHeight / zoom - STAGE_H) / 2)
-      const from = COLUMNS.map((_, i) =>
-        up(i) ? STAGE_H - PAD + bar + 12 : -(2 * SET + GAP) - PAD - bar - 12
-      )
-      place(from)
-      showExtras(COLUMNS.map(() => 1))
-
       timers.push(window.setTimeout(() => setPhase("title"), TITLE_IN))
       timers.push(window.setTimeout(() => setPhase("out"), TITLE_OUT))
-      timers.push(
-        window.setTimeout(() => {
-          setPhase("wall")
-          let start = 0
-          const frame = (now: number) => {
-            if (!start) start = now
-            const t = (now - start) / 1000
-            const ys: number[] = []
-            const fade: number[] = []
-            COLUMNS.forEach((_, i) => {
-              // Critically damped, from rest: no abrupt start, no overshoot.
-              const tau = Math.max(0, t - i * STAGGER)
-              const left = (from[i] - rest[i]) * (1 + OMEGA * tau) * Math.exp(-OMEGA * tau)
-              ys.push(rest[i] + left)
-              // The set that rolled by fades out over the last stretch, so
-              // the wall rests as one clean screen.
-              fade.push(Math.min(1, Math.abs(left) / 180))
-            })
-            place(ys)
-            showExtras(fade)
-            if (t > ROLL_FOR + (COLUMNS.length - 1) * STAGGER) live()
-            else raf = requestAnimationFrame(frame)
-          }
-          raf = requestAnimationFrame(frame)
-        }, ROLL_AT)
-      )
+      timers.push(window.setTimeout(land, LAND_AT))
+      timers.push(window.setTimeout(live, LAND_AT + LAND_FOR + RIPPLE + 200))
     }
 
     const onKey = (e: KeyboardEvent) => {
@@ -278,47 +270,25 @@ export function WidgetWall() {
   return (
     <main className="fixed inset-0 grid place-items-center overflow-hidden bg-canvas" data-phase={phase}>
       <div ref={stage} className="relative shrink-0" style={{ width: STAGE_W, height: STAGE_H }}>
-        <div className="absolute inset-0 flex" style={{ gap: GAP, padding: PAD }}>
-          {COLUMNS.map((column, i) => {
-            const main = (
-              <div key="main" className="flex flex-col" style={{ gap: GAP }}>
-                <TileSet column={column} steps={steps} />
-              </div>
-            )
-            const extra = (
-              <div
-                key="extra"
-                aria-hidden
-                ref={(node) => {
-                  extras.current[i] = node
-                }}
-                className="invisible flex flex-col"
-                style={{ gap: GAP }}
-              >
-                <TileSet column={column} />
-              </div>
-            )
-            return (
-              <div key={i} className="relative shrink-0" style={{ width: column.w }}>
-                <div
-                  ref={(node) => {
-                    strips.current[i] = node
-                  }}
-                  className="absolute inset-x-0 top-0 flex flex-col will-change-transform"
-                  style={{ gap: GAP, transform: "translate3d(0, 200vh, 0)" }}
-                >
-                  {i % 2 === 0 ? [extra, main] : [main, extra]}
-                </div>
-              </div>
-            )
-          })}
-        </div>
-
-        <h1 className="title pointer-events-none absolute inset-0 grid place-items-center text-[132px] leading-none font-semibold tracking-[-0.05em]">
+        <h1 className="title pointer-events-none absolute inset-0 grid place-items-center text-[64px] leading-none font-semibold tracking-[-0.035em]">
           <span>
             <span className="title-word">Launch</span> <span className="title-word">Day</span>
           </span>
         </h1>
+
+        <div className="absolute inset-0 flex" style={{ gap: GAP, padding: PAD }}>
+          {COLUMNS.map((column, i) => (
+            <div key={i} className="flex shrink-0 flex-col" style={{ width: column.w, gap: GAP }}>
+              {column.rows.map((row, r) => (
+                <div key={r} className="flex shrink-0" style={{ gap: GAP, height: row.h }}>
+                  {tilesOf(row).map((tile) => (
+                    <TileView key={tile.id} tile={tile} step={steps[tile.id] ?? 0} />
+                  ))}
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
       </div>
     </main>
   )

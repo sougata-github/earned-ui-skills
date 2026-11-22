@@ -1,7 +1,8 @@
 @import "tailwindcss";
 
-/* One accent, mostly neutrals (the widget-bento-web lessons). Light is the
-   showcase theme, dark is designed too. Colour only through these tokens. */
+/* Neutral surfaces, six colours that each mean something (the
+   widget-bento-web lessons). Light and dark are both designed. Colour only
+   through these tokens. */
 @theme {
   --font-sans: "Onest", ui-sans-serif, system-ui, sans-serif;
   --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
@@ -17,30 +18,47 @@
   --ink: oklch(0.2 0.004 260);
   --ink-soft: oklch(0.2 0.004 260 / 0.52);
   --ink-faint: oklch(0.2 0.004 260 / 0.09);
+  /* A sunken track for a control with a raised thumb. */
+  --well: oklch(0.2 0.004 260 / 0.07);
+  /* The same in both themes: ink on a bright fill, and on a dark tile. */
+  --ink-fixed: oklch(0.2 0.004 260);
   --on-dark: oklch(0.98 0 0);
   --on-dark-soft: oklch(0.98 0 0 / 0.58);
   --on-dark-faint: oklch(0.98 0 0 / 0.14);
-  --accent: oklch(0.76 0.2 148);
-  --accent-ink: oklch(0.27 0.08 150);
-  --accent-soft: oklch(0.925 0.075 148);
-  /* The crew's avatars: the one place besides the accent with colour. */
-  --av-rose: oklch(0.68 0.2 5);
-  --av-amber: oklch(0.76 0.16 70);
-  --av-violet: oklch(0.62 0.2 290);
-  --av-sky: oklch(0.7 0.14 235);
+  /* Six colours, each with a meaning on the wall: a fill, and an ink for
+     text and glyphs on its own tint. */
+  --green: oklch(0.74 0.2 150);
+  --green-ink: oklch(0.46 0.14 152);
+  --blue: oklch(0.62 0.19 255);
+  --blue-ink: oklch(0.5 0.18 257);
+  --orange: oklch(0.68 0.2 42);
+  --orange-ink: oklch(0.55 0.18 40);
+  --violet: oklch(0.6 0.2 292);
+  --violet-ink: oklch(0.5 0.2 292);
+  --amber: oklch(0.8 0.16 80);
+  --amber-ink: oklch(0.55 0.13 70);
+  --rose: oklch(0.65 0.21 12);
+  --rose-ink: oklch(0.53 0.2 14);
   --lift: 0 1px 2px oklch(0 0 0 / 0.04), 0 3px 10px -3px oklch(0 0 0 / 0.07);
 }
 
 .dark {
   --canvas: oklch(0.15 0.004 260);
   --tile: oklch(0.205 0.004 260);
-  --tile-inner: oklch(0.26 0.004 260);
+  --tile-inner: oklch(0.265 0.004 260);
   --tile-dark: oklch(0.1 0.003 260);
   --ink: oklch(0.97 0 0);
   --ink-soft: oklch(0.97 0 0 / 0.55);
   --ink-faint: oklch(0.97 0 0 / 0.1);
-  --accent-soft: oklch(0.34 0.08 148);
-  --accent-ink: oklch(0.2 0.06 150);
+  --well: oklch(0 0 0 / 0.34);
+  --green-ink: oklch(0.84 0.17 150);
+  --blue: oklch(0.66 0.18 255);
+  --blue-ink: oklch(0.78 0.13 250);
+  --orange-ink: oklch(0.8 0.15 50);
+  --violet: oklch(0.65 0.19 292);
+  --violet-ink: oklch(0.78 0.13 292);
+  --amber-ink: oklch(0.87 0.14 85);
+  --rose-ink: oklch(0.78 0.14 12);
   --lift: inset 0 1px 0 oklch(1 0 0 / 0.05), 0 1px 2px oklch(0 0 0 / 0.4);
 }
 
@@ -52,16 +70,23 @@
   --color-ink: var(--ink);
   --color-ink-soft: var(--ink-soft);
   --color-ink-faint: var(--ink-faint);
+  --color-well: var(--well);
+  --color-ink-fixed: var(--ink-fixed);
   --color-on-dark: var(--on-dark);
   --color-on-dark-soft: var(--on-dark-soft);
   --color-on-dark-faint: var(--on-dark-faint);
-  --color-accent: var(--accent);
-  --color-accent-ink: var(--accent-ink);
-  --color-accent-soft: var(--accent-soft);
-  --color-av-rose: var(--av-rose);
-  --color-av-amber: var(--av-amber);
-  --color-av-violet: var(--av-violet);
-  --color-av-sky: var(--av-sky);
+  --color-green: var(--green);
+  --color-green-ink: var(--green-ink);
+  --color-blue: var(--blue);
+  --color-blue-ink: var(--blue-ink);
+  --color-orange: var(--orange);
+  --color-orange-ink: var(--orange-ink);
+  --color-violet: var(--violet);
+  --color-violet-ink: var(--violet-ink);
+  --color-amber: var(--amber);
+  --color-amber-ink: var(--amber-ink);
+  --color-rose: var(--rose);
+  --color-rose-ink: var(--rose-ink);
 }
 
 html,
@@ -73,28 +98,26 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* ------------------------------------------------------------ the title */
+/* ------------------------------------------------------------ the opening */
 
-/* Nothing but the words at first: they resolve out of a blur while they
-   settle from a slightly smaller scale, the second word a beat after the
-   first. Then the whole line passes toward the viewer and is gone. */
+/* Nothing but the words at first. They come into focus quietly, the second
+   word a beat after the first, hold, then recede as the wall lands in front
+   of them. Small moves: a soft blur and a few percent of scale. */
 .title-word {
   display: inline-block;
   opacity: 0;
-  transform: translateY(0.06em) scale(0.94);
-  filter: blur(18px);
+  transform: translateY(0.05em) scale(0.985);
+  filter: blur(6px);
   transition:
-    opacity 900ms var(--ease-out-quint),
-    transform 1400ms var(--ease-out-expo),
-    filter 900ms var(--ease-out-quint);
-  will-change: transform, filter, opacity;
+    opacity 1100ms var(--ease-out-quint),
+    transform 1300ms var(--ease-out-quint),
+    filter 1100ms var(--ease-out-quint);
 }
 .title {
   transition:
-    opacity 650ms cubic-bezier(0.4, 0, 0.6, 1),
-    transform 800ms cubic-bezier(0.4, 0, 0.6, 1),
-    filter 650ms cubic-bezier(0.4, 0, 0.6, 1);
-  will-change: transform, filter, opacity;
+    opacity 600ms cubic-bezier(0.4, 0, 0.2, 1),
+    transform 700ms cubic-bezier(0.4, 0, 0.2, 1),
+    filter 600ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 [data-phase="title"] .title-word,
 [data-phase="out"] .title-word {
@@ -103,18 +126,25 @@ body {
   filter: blur(0);
 }
 [data-phase="title"] .title-word:nth-child(2) {
-  transition-delay: 140ms;
+  transition-delay: 120ms;
 }
 [data-phase="out"] .title,
 [data-phase="wall"] .title,
 [data-phase="live"] .title {
   opacity: 0;
-  transform: scale(1.07);
-  filter: blur(14px);
+  transform: scale(0.96);
+  filter: blur(6px);
 }
 [data-phase="blank"] .title,
 [data-phase="blank"] .title-word {
   transition: none;
+}
+
+/* The tiles wait unseen until the wall lands. */
+[data-phase="blank"] .tile,
+[data-phase="title"] .tile,
+[data-phase="out"] .tile {
+  opacity: 0;
 }
 
 /* ------------------------------------------------------------ pieces */

@@ -7,15 +7,21 @@ import {
   ArrowRight01Icon,
   Calendar03Icon,
   Cancel01Icon,
+  CloudUploadIcon,
   CodeIcon,
-  File02Icon,
+  CreditCardIcon,
+  GitBranchIcon,
   Globe02Icon,
+  Invoice01Icon,
+  Loading03Icon,
   MinusSignIcon,
   PauseIcon,
   PlayIcon,
   Search01Icon,
   SmartPhone01Icon,
+  StarIcon,
   Tick02Icon,
+  UserAdd01Icon,
 } from "@hugeicons/core-free-icons"
 
 import {
@@ -42,8 +48,12 @@ import {
 // the conductor reaches it (`step` counts its turns).
 //
 // One anatomy everywhere: a 14px semibold title, 12px soft meta, a 34px
-// number, white cards nested in the grey tile, round 28px controls. State
-// changes are explicit and smooth: digits turn like an odometer, text
+// number, white cards nested in the grey tile (their radius concentric with
+// the tile's), round 28px controls, Hugeicons for every glyph. Colour has a
+// meaning: green is live or done, blue is people and traffic, orange is the
+// launch itself, violet is files and search, amber is praise.
+//
+// State changes are explicit and smooth: digits turn like an odometer, text
 // crossfades through a blur, rows glide to their new slot.
 
 export type WidgetProps = { step: number }
@@ -52,6 +62,8 @@ const TITLE = "text-[14px] leading-none font-semibold tracking-[-0.01em]"
 const META = "text-[12px] leading-none text-ink-soft"
 const NUM = "text-[34px] leading-none font-semibold tracking-[-0.035em]"
 const CARD = "bg-tile-inner shadow-(--lift)"
+const PILL =
+  "inline-flex h-6 min-w-6 items-center justify-center rounded-full px-2 text-[11px] leading-none font-semibold"
 const GLIDE = "duration-600 ease-out-quint"
 
 const at = <T,>(list: readonly T[], step: number) => list[step % list.length]
@@ -129,21 +141,17 @@ function Avatar({ who, size = "size-7 text-[11px]" }: { who: CrewId; size?: stri
   )
 }
 
-function Spinner({ className = "size-3.5" }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 16 16" fill="none" className={`spin ${className}`} aria-hidden>
-      <circle cx="8" cy="8" r="6" stroke="currentColor" strokeOpacity="0.25" strokeWidth="2" />
-      <path d="M14 8a6 6 0 0 0-6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-    </svg>
-  )
+function Spinner({ className = "size-4" }: { className?: string }) {
+  return <HugeiconsIcon icon={Loading03Icon} strokeWidth={2.5} className={`spin ${className}`} />
 }
 
+/** A green disc with a tick: done. */
 function Check({ className = "size-[22px]" }: { className?: string }) {
   return (
     <span
-      className={`pop grid shrink-0 place-items-center rounded-full bg-accent text-accent-ink ${className}`}
+      className={`pop grid shrink-0 place-items-center rounded-full bg-green text-ink-fixed ${className}`}
     >
-      <Icon icon={Tick02Icon} className="size-3" stroke={3.5} />
+      <Icon icon={Tick02Icon} className="size-[55%]" stroke={3.5} />
     </span>
   )
 }
@@ -151,10 +159,10 @@ function Check({ className = "size-[22px]" }: { className?: string }) {
 function Toggle({ on }: { on: boolean }) {
   return (
     <span
-      className={`relative h-6 w-10 shrink-0 rounded-full transition-colors ${GLIDE} ${on ? "bg-accent" : "bg-ink-faint"}`}
+      className={`relative h-6 w-10 shrink-0 rounded-full transition-colors ${GLIDE} ${on ? "bg-green" : "bg-ink-faint"}`}
     >
       <span
-        className={`absolute top-0.5 left-0.5 size-5 rounded-full bg-tile-inner shadow-(--lift) transition-transform ${GLIDE} ${on ? "translate-x-4" : ""}`}
+        className={`absolute top-0.5 left-0.5 size-5 rounded-full bg-on-dark shadow-(--lift) transition-transform ${GLIDE} ${on ? "translate-x-4" : ""}`}
       />
     </span>
   )
@@ -222,7 +230,7 @@ export function Calendar({ step }: WidgetProps) {
             }}
           >
             <span
-              className={`size-[30px] rounded-full transition-colors ${GLIDE} ${launch ? "bg-accent" : "bg-ink-faint"}`}
+              className={`size-[30px] rounded-full transition-colors ${GLIDE} ${launch ? "bg-orange" : "bg-ink-faint"}`}
             />
           </span>
           {cells.map((d, i) => (
@@ -231,7 +239,7 @@ export function Calendar({ step }: WidgetProps) {
               className={`relative grid h-8 place-items-center transition-colors ${GLIDE} ${
                 d === day
                   ? launch
-                    ? "font-semibold text-accent-ink"
+                    ? "font-semibold text-on-dark"
                     : "font-semibold"
                   : d && d < LAUNCH.day - 1
                     ? "text-ink-soft"
@@ -244,8 +252,12 @@ export function Calendar({ step }: WidgetProps) {
         </div>
       </div>
 
-      <div className="flex h-10 items-center gap-2 rounded-[14px] bg-ink-faint px-3 text-[12px] font-medium">
-        <Icon icon={Calendar03Icon} className="size-4 shrink-0" />
+      <div className="flex h-10 items-center gap-2 rounded-[10px] bg-ink-faint px-3 text-[12px] font-medium">
+        <span
+          className={`grid place-items-center transition-colors ${GLIDE} ${launch ? "text-orange-ink" : ""}`}
+        >
+          <Icon icon={Calendar03Icon} className="size-4" />
+        </span>
         <Swap
           value={
             launch
@@ -266,10 +278,11 @@ export function Signups({ step }: WidgetProps) {
     <div className="flex h-full flex-col justify-between">
       <div className="flex items-center justify-between">
         <p className={TITLE}>Signups</p>
-        {/* The range switch belongs to this number: it changes it. */}
-        <div className="relative grid h-7 w-[108px] grid-cols-3 rounded-full bg-ink-faint p-0.5 text-[11px] font-medium">
+        {/* The range switch belongs to this number: it changes it. A 32px
+            track, the thumb inset 4px on every side, three 40px segments. */}
+        <div className="relative grid h-8 w-[128px] grid-cols-3 rounded-full bg-well p-1 text-[11px] leading-none font-semibold">
           <span
-            className={`absolute inset-y-0.5 left-0.5 w-[calc((100%-4px)/3)] rounded-full bg-tile-inner shadow-(--lift) transition-transform ${GLIDE}`}
+            className={`absolute top-1 bottom-1 left-1 w-[calc((100%-8px)/3)] rounded-full bg-tile-inner shadow-(--lift) transition-transform ${GLIDE}`}
             style={{ transform: `translateX(${i * 100}%)` }}
           />
           {SIGNUP_RANGES.map((r, j) => (
@@ -287,16 +300,16 @@ export function Signups({ step }: WidgetProps) {
         <p className={NUM}>
           <Digits value={range.total.toLocaleString("en-US")} />
         </p>
-        <span className="rounded-full bg-accent-soft px-2 py-1.5 text-[11px] leading-none font-semibold text-accent-ink">
+        <span className={`${PILL} bg-blue/14 text-blue-ink`}>
           <Swap value={range.delta} />
         </span>
       </div>
 
-      <div className="flex h-24 items-end gap-1.5">
+      <div className="flex h-[92px] items-end gap-1.5">
         {range.bars.map((v, j) => (
           <span
             key={j}
-            className={`flex-1 rounded-[7px] transition-[height] duration-700 ease-out-quint ${j === range.bars.length - 1 ? "bg-accent" : "bg-ink-faint"}`}
+            className={`flex-1 rounded-[7px] transition-[height] duration-700 ease-out-quint ${j === range.bars.length - 1 ? "bg-blue" : "bg-blue/18"}`}
             style={{ height: `${(v / peak) * 100}%`, transitionDelay: `${j * 35}ms` }}
           />
         ))}
@@ -315,11 +328,11 @@ export function Search({ step }: WidgetProps) {
       <span className="flex-1 text-[13px] whitespace-nowrap">
         {typed || <span className="text-ink-soft">Search tickets</span>}
         {on && (
-          <span className="caret ml-px inline-block h-[1.05em] w-[1.5px] translate-y-[2px] bg-ink" />
+          <span className="caret ml-px inline-block h-[1.05em] w-[1.5px] translate-y-[2px] bg-violet" />
         )}
       </span>
       <span
-        className={`rounded-full bg-accent px-2.5 py-1.5 text-[11px] leading-none font-semibold text-accent-ink transition-[opacity,scale,filter] ${GLIDE} ${found ? "" : "scale-90 opacity-0 blur-[3px]"}`}
+        className={`grid h-8 place-items-center rounded-full bg-violet px-3 text-[11px] leading-none font-semibold text-on-dark transition-[opacity,scale,filter] ${GLIDE} ${found ? "" : "scale-90 opacity-0 blur-[3px]"}`}
       >
         3 results
       </span>
@@ -359,9 +372,9 @@ export function Seats({ step }: WidgetProps) {
         <p className="text-[26px] leading-none font-semibold">
           <Digits value={4 + (step % 3)} />
         </p>
-        <RoundButton>
+        <span className="grid size-7 place-items-center rounded-full bg-ink text-canvas">
           <Icon icon={Add01Icon} className="size-3.5" stroke={2.5} />
-        </RoundButton>
+        </span>
       </div>
     </div>
   )
@@ -374,10 +387,10 @@ export function Deploy({ step }: WidgetProps) {
   return (
     <div className="grid h-full place-items-center">
       <span
-        className={`flex h-10 w-[188px] items-center justify-center gap-2 rounded-full text-[13px] font-semibold transition-colors ${GLIDE} ${live ? "bg-accent text-accent-ink" : "bg-ink text-canvas"}`}
+        className={`flex h-10 w-[188px] items-center justify-center gap-2 rounded-full text-[13px] font-semibold transition-colors ${GLIDE} ${live ? "bg-green text-ink-fixed" : "bg-ink text-canvas"}`}
       >
         <span key={String(live)} className="pop grid place-items-center">
-          {live ? <Icon icon={Tick02Icon} className="size-3.5" stroke={3.5} /> : <Spinner />}
+          {live ? <Icon icon={Tick02Icon} className="size-4" stroke={3} /> : <Spinner />}
         </span>
         <Swap value={live ? `${PRODUCT.name} ${PRODUCT.version} is live` : "Deploying"} />
       </span>
@@ -400,8 +413,8 @@ export function Pipeline({ step }: WidgetProps) {
               {i < done ? (
                 <Check />
               ) : i === done ? (
-                <span key="run" className="pop text-ink-soft">
-                  <Spinner className="size-4" />
+                <span key="run" className="pop grid place-items-center text-ink-soft">
+                  <Spinner className="size-[18px]" />
                 </span>
               ) : (
                 <span className="size-[18px] rounded-full border-2 border-ink-faint" />
@@ -426,28 +439,25 @@ export function Pipeline({ step }: WidgetProps) {
 
 export function Regions({ step }: WidgetProps) {
   const live = 1 + (step % REGIONS.length)
-  // Four arcs with small gaps: one lights up per region.
+  // One ring: a groove, and a fill inset in it that grows a quarter per
+  // region.
   const r = 44
   const c = 2 * Math.PI * r
-  const arc = c / 4 - 9
   return (
     <div className="flex h-full flex-col items-center justify-between">
       <div className="relative size-[132px]">
-        <svg viewBox="0 0 104 104" className="size-full -rotate-90">
-          {REGIONS.map((name, i) => (
-            <circle
-              key={name}
-              cx="52"
-              cy="52"
-              r={r}
-              fill="none"
-              strokeWidth="8"
-              strokeLinecap="round"
-              strokeDasharray={`${arc} ${c - arc}`}
-              strokeDashoffset={-(i * (c / 4)) - 4.5}
-              className={`transition-[stroke] ${GLIDE} ${i < live ? "stroke-accent" : "stroke-on-dark-faint"}`}
-            />
-          ))}
+        <svg viewBox="0 0 104 104" className="size-full -rotate-90" fill="none">
+          <circle cx="52" cy="52" r={r} strokeWidth="12" className="stroke-on-dark-faint" />
+          <circle
+            cx="52"
+            cy="52"
+            r={r}
+            strokeWidth="6"
+            strokeLinecap="round"
+            strokeDasharray={c}
+            strokeDashoffset={c * (1 - live / REGIONS.length)}
+            className="stroke-blue transition-[stroke-dashoffset] duration-900 ease-out-quint"
+          />
         </svg>
         <p className="absolute inset-0 grid place-items-center text-[28px] leading-none font-semibold tracking-[-0.03em]">
           <span>
@@ -469,9 +479,11 @@ export function Upload({ step }: WidgetProps) {
   const done = s.share === 1
   return (
     <div className="flex h-full flex-col justify-between">
-      <span className={`grid size-9 place-items-center rounded-[12px] ${CARD}`}>
+      <span
+        className={`grid size-9 place-items-center rounded-[10px] transition-colors ${GLIDE} ${done ? "bg-green/16 text-green-ink" : "bg-violet/14 text-violet-ink"}`}
+      >
         <span key={String(done)} className="pop grid place-items-center">
-          {done ? <Check className="size-5" /> : <Icon icon={File02Icon} className="size-4.5" />}
+          <Icon icon={done ? Tick02Icon : CloudUploadIcon} className="size-[18px]" stroke={done ? 3 : 2} />
         </span>
       </span>
       <div className="flex flex-col gap-2">
@@ -480,7 +492,7 @@ export function Upload({ step }: WidgetProps) {
       </div>
       <div className="h-1.5 rounded-full bg-ink-faint">
         <div
-          className="h-full rounded-full bg-accent transition-[width] duration-900 ease-out-quint"
+          className={`h-full rounded-full transition-[width,background-color] duration-900 ease-out-quint ${done ? "bg-green" : "bg-violet"}`}
           style={{ width: `${s.share * 100}%` }}
         />
       </div>
@@ -493,21 +505,21 @@ export function Upload({ step }: WidgetProps) {
 export function Invoice({ step }: WidgetProps) {
   const s = step % 3
   return (
-    <div className={`flex h-full flex-col justify-between rounded-[20px] p-4 ${CARD}`}>
+    <div className={`flex h-full flex-col justify-between rounded-[16px] p-4 ${CARD}`}>
       <div className="flex items-center justify-between">
         <p className={TITLE}>Invoice to {CUSTOMER.name}</p>
         <RoundButton>
           <Icon icon={Cancel01Icon} className="size-3" stroke={2.5} />
         </RoundButton>
       </div>
-      <p className="flex h-[34px] items-center gap-2 rounded-[12px] bg-ink-faint px-3 text-[12px] font-medium">
-        <span key={s} className="pop grid size-4 place-items-center">
+      <p className="flex h-[34px] items-center gap-2 rounded-[10px] bg-ink-faint px-2.5 text-[12px] font-medium">
+        <span key={s} className="pop grid size-[18px] place-items-center">
           {s === 2 ? (
-            <Check className="size-4" />
+            <Check className="size-[18px]" />
           ) : s === 1 ? (
-            <Spinner className="size-3.5" />
+            <Spinner />
           ) : (
-            <span className="size-2 rounded-full bg-ink-soft" />
+            <Icon icon={Invoice01Icon} className="size-4 text-ink-soft" />
           )}
         </span>
         <Swap value={["Ready to send", "Sending to Northwind", "Sent, due Dec 1"][s]} />
@@ -527,11 +539,11 @@ export function Invoice({ step }: WidgetProps) {
       <div className="grid grid-cols-2 gap-2 text-[13px] font-semibold">
         <span className="grid h-10 place-items-center rounded-full bg-ink-faint">Cancel</span>
         <span
-          className={`flex h-10 items-center justify-center gap-2 rounded-full transition-colors ${GLIDE} ${s === 2 ? "bg-accent text-accent-ink" : "bg-ink text-canvas"}`}
+          className={`flex h-10 items-center justify-center gap-2 rounded-full transition-colors ${GLIDE} ${s === 2 ? "bg-green text-ink-fixed" : "bg-ink text-canvas"}`}
         >
           {s > 0 && (
             <span key={s} className="pop grid place-items-center">
-              {s === 1 ? <Spinner /> : <Icon icon={Tick02Icon} className="size-3.5" stroke={3.5} />}
+              {s === 1 ? <Spinner /> : <Icon icon={Tick02Icon} className="size-4" stroke={3} />}
             </span>
           )}
           <Swap value={["Send", "Sending", "Sent"][s]} />
@@ -567,9 +579,9 @@ export function Voice({ step }: WidgetProps) {
         </div>
       </div>
       <div className="flex items-center gap-3">
-        <span className="grid size-9 shrink-0 place-items-center rounded-full bg-on-dark text-tile-dark">
+        <span className="grid size-9 shrink-0 place-items-center rounded-full bg-orange text-on-dark">
           <span key={String(playing)} className="pop grid place-items-center">
-            <Icon icon={playing ? PauseIcon : PlayIcon} className="size-4" />
+            <Icon icon={playing ? PauseIcon : PlayIcon} className="size-4" stroke={2.5} />
           </span>
         </span>
         {/* Two copies of the wave: the played one is revealed left to right. */}
@@ -582,7 +594,7 @@ export function Voice({ step }: WidgetProps) {
               transition: s === 0 ? "none" : "clip-path 1500ms linear",
             }}
           >
-            <Wave tone="bg-accent" />
+            <Wave tone="bg-orange" />
           </span>
         </span>
         <span className="ml-auto text-[11px] text-on-dark-soft tabular-nums">0:24</span>
@@ -591,8 +603,8 @@ export function Voice({ step }: WidgetProps) {
   )
 }
 
-const CHAT_ROWS = 4
-const CHAT_SLOT = 44
+const CHAT_ROWS = 5
+const CHAT_SLOT = 42
 
 export function Chat({ step }: WidgetProps) {
   const n = CHAT.length
@@ -605,10 +617,12 @@ export function Chat({ step }: WidgetProps) {
     <div className="flex h-full flex-col justify-between">
       <div className="flex items-center justify-between">
         <p className={TITLE}>#launch</p>
-        <span className={META}>5 online</span>
+        <span className={`${META} flex items-center gap-1.5`}>
+          <span className="size-1.5 rounded-full bg-green" />5 online
+        </span>
       </div>
 
-      <div className="relative" style={{ height: CHAT_ROWS * CHAT_SLOT - 10 }}>
+      <div className="relative" style={{ height: CHAT_ROWS * CHAT_SLOT - 8 }}>
         {keys.map((k) => {
           const m = message(k)
           const slot = k - step
@@ -626,7 +640,7 @@ export function Chat({ step }: WidgetProps) {
             >
               {!mine && <Avatar who={m.who} size="size-6 text-[10px]" />}
               <p
-                className={`rounded-[17px] px-3 py-2 text-[13px] leading-[18px] whitespace-nowrap ${mine ? "bg-ink text-canvas" : CARD}`}
+                className={`rounded-[17px] px-3 py-2 text-[13px] leading-[18px] whitespace-nowrap ${mine ? "bg-blue text-on-dark" : CARD}`}
               >
                 {m.text}
               </p>
@@ -665,7 +679,7 @@ export function Countdown() {
         <Digits value={`00:${two(Math.floor(left / 60))}:${two(left % 60)}`} />
       </p>
       <p className="flex items-center gap-2 text-[12px] leading-none text-on-dark-soft">
-        <span className="size-1.5 rounded-full bg-accent" />
+        <span className="size-1.5 rounded-full bg-green" />
         All checks green
       </p>
     </div>
@@ -679,7 +693,7 @@ export function Flags({ step }: WidgetProps) {
     { name: "Team dark mode", note: "Follows the system", on: swap },
   ]
   return (
-    <div className={`flex h-full flex-col divide-y divide-ink-faint rounded-[18px] px-3.5 ${CARD}`}>
+    <div className={`flex h-full flex-col divide-y divide-ink-faint rounded-[16px] px-3.5 ${CARD}`}>
       {rows.map((r) => (
         <div key={r.name} className="flex flex-1 items-center gap-2">
           <div className="flex min-w-0 flex-1 flex-col gap-1.5">
@@ -693,32 +707,44 @@ export function Flags({ step }: WidgetProps) {
   )
 }
 
+const PLATFORMS = [
+  { name: "Web", icon: Globe02Icon, tone: "text-blue-ink" },
+  { name: "API", icon: CodeIcon, tone: "text-violet-ink" },
+  { name: "iOS", icon: SmartPhone01Icon, tone: "text-orange-ink" },
+] as const
+
 export function Platforms({ step }: WidgetProps) {
   const ios = step % 2 === 1
-  const chips = [
-    { name: "Web", icon: Globe02Icon, done: true },
-    { name: "API", icon: CodeIcon, done: true },
-    { name: "iOS", icon: SmartPhone01Icon, done: ios },
-  ]
   return (
     <div className="flex h-full flex-col justify-between">
-      <p className={TITLE}>Shipping to</p>
-      <div className="flex gap-1.5">
-        {chips.map((c) => (
-          <span
-            key={c.name}
-            className={`flex h-8 items-center gap-1.5 rounded-full px-2 text-[12px] font-semibold transition-colors ${GLIDE} ${c.done ? "bg-accent-soft text-accent-ink" : "bg-ink-faint text-ink-soft"}`}
-          >
-            <span key={String(c.done)} className="pop grid place-items-center">
-              <Icon
-                icon={c.done ? Tick02Icon : c.icon}
-                className="size-3.5"
-                stroke={c.done ? 3.5 : 2}
+      <div className="flex items-center justify-between">
+        <p className={TITLE}>Shipping to</p>
+        <Swap value={ios ? "3 of 3 live" : "2 of 3 live"} className={META} />
+      </div>
+      {/* Three small cards, one per platform: its glyph in its own colour,
+          and a dot that turns green when it is live. */}
+      <div className="grid grid-cols-3 gap-2.5">
+        {PLATFORMS.map((p, i) => {
+          const live = i < 2 || ios
+          return (
+            <div
+              key={p.name}
+              className={`relative flex h-[52px] flex-col items-center justify-center gap-1.5 rounded-[10px] ${CARD}`}
+            >
+              <span
+                className={`absolute top-1.5 right-1.5 size-1.5 rounded-full transition-colors ${GLIDE} ${live ? "bg-green" : "bg-ink-faint"}`}
               />
-            </span>
-            {c.name}
-          </span>
-        ))}
+              <span key={String(live)} className={`pop grid place-items-center ${live ? p.tone : "text-ink-soft"}`}>
+                {live ? <Icon icon={p.icon} className="size-[18px]" /> : <Spinner className="size-[18px]" />}
+              </span>
+              <span
+                className={`text-[11px] leading-none font-semibold transition-colors ${GLIDE} ${live ? "" : "text-ink-soft"}`}
+              >
+                {p.name}
+              </span>
+            </div>
+          )
+        })}
       </div>
     </div>
   )
@@ -735,11 +761,9 @@ export function Reviews({ step }: WidgetProps) {
           return (
             <span
               key={`${i}${on}`}
-              className={`${i === 4 && on ? "pop" : ""} ${on ? "text-accent" : "text-ink-faint"}`}
+              className={`${i === 4 && on ? "pop" : ""} ${on ? "text-amber" : "text-ink-faint"}`}
             >
-              <svg viewBox="0 0 24 24" className="size-[26px] fill-current" aria-hidden>
-                <path d="M12 2.6l2.9 5.9 6.5.9-4.7 4.6 1.1 6.5-5.8-3.1-5.8 3.1 1.1-6.5-4.7-4.6 6.5-.9z" />
-              </svg>
+              <HugeiconsIcon icon={StarIcon} strokeWidth={1.5} className="size-[26px] fill-current" />
             </span>
           )
         })}
@@ -758,7 +782,7 @@ export function Latency({ step }: WidgetProps) {
         <Digits value={s.ms} />
         <span className="ml-1 text-[14px] font-medium tracking-normal text-ink-soft">ms</span>
       </p>
-      <span className="w-fit rounded-full bg-accent-soft px-2 py-1.5 text-[11px] leading-none font-semibold text-accent-ink">
+      <span className={`${PILL} w-fit bg-green/16 text-green-ink`}>
         <Swap value={s.delta} />
       </span>
     </div>
@@ -767,30 +791,44 @@ export function Latency({ step }: WidgetProps) {
 
 // ------------------------------------------------------------ column 5
 
+// A smooth curve through the points (Catmull-Rom as cubic Beziers), so the
+// line rises and dips the way revenue does, with no corners.
+function smooth(points: readonly (readonly [number, number])[]) {
+  let d = `M${points[0][0].toFixed(1)} ${points[0][1].toFixed(1)}`
+  for (let i = 0; i < points.length - 1; i++) {
+    const p0 = points[Math.max(0, i - 1)]
+    const p1 = points[i]
+    const p2 = points[i + 1]
+    const p3 = points[Math.min(points.length - 1, i + 2)]
+    const c1 = [p1[0] + (p2[0] - p0[0]) / 6, p1[1] + (p2[1] - p0[1]) / 6]
+    const c2 = [p2[0] - (p3[0] - p1[0]) / 6, p2[1] - (p3[1] - p1[1]) / 6]
+    d += `C${c1[0].toFixed(1)} ${c1[1].toFixed(1)} ${c2[0].toFixed(1)} ${c2[1].toFixed(1)} ${p2[0].toFixed(1)} ${p2[1].toFixed(1)}`
+  }
+  return d
+}
+
 export function Revenue({ step }: WidgetProps) {
   const s = at(MRR, step)
   const W = 200
   const H = 80
-  const min = 10
-  const max = 20.4
+  const min = 10.5
+  const max = 20.6
   const pts = s.points.map(
     (v, i) => [(i / (s.points.length - 1)) * W, H - ((v - min) / (max - min)) * H] as const
   )
-  const line = pts.map(([x, y], i) => `${i ? "L" : "M"}${x.toFixed(1)} ${y.toFixed(1)}`).join("")
+  const line = smooth(pts)
   const [, ly] = pts[pts.length - 1]
-  const morph = "transition-[d] duration-700 ease-out-quint"
+  const morph = "transition-[d] duration-900 ease-out-quint"
   return (
     <div className="flex h-full flex-col justify-between">
       <div className="flex items-center justify-between">
         <p className={TITLE}>Monthly revenue</p>
-        <span className="rounded-full bg-accent-soft px-2 py-1.5 text-[11px] leading-none font-semibold text-accent-ink">
-          +12%
-        </span>
+        <span className={`${PILL} bg-green/16 text-green-ink`}>+12%</span>
       </div>
       <p className={NUM}>
         $<Digits value={s.value} />k
       </p>
-      <div className="relative h-[92px]">
+      <div className="relative mr-1.5 h-[92px]">
         <svg
           viewBox={`0 0 ${W} ${H}`}
           preserveAspectRatio="none"
@@ -799,19 +837,21 @@ export function Revenue({ step }: WidgetProps) {
         >
           <defs>
             <linearGradient id="mrr-fill" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stopColor="var(--accent)" stopOpacity="0.3" />
-              <stop offset="1" stopColor="var(--accent)" stopOpacity="0" />
+              <stop offset="0" stopColor="var(--green)" stopOpacity="0.32" />
+              <stop offset="1" stopColor="var(--green)" stopOpacity="0" />
             </linearGradient>
           </defs>
-          {/* The path as CSS, so the line glides to its new shape (every
-              state has the same number of points). */}
+          {/* The path as CSS too, so the curve glides to its new shape where
+              the browser can (every state has the same number of points). */}
           <path
+            d={`${line}L${W} ${H}L0 ${H}Z`}
             fill="url(#mrr-fill)"
             className={morph}
             style={{ d: `path("${line}L${W} ${H}L0 ${H}Z")` } as CSSProperties}
           />
           <path
-            stroke="var(--accent)"
+            d={line}
+            stroke="var(--green)"
             strokeWidth="2.5"
             strokeLinejoin="round"
             strokeLinecap="round"
@@ -821,7 +861,7 @@ export function Revenue({ step }: WidgetProps) {
           />
         </svg>
         <span
-          className="absolute right-0 size-3 translate-x-1/2 -translate-y-1/2 rounded-full border-[2.5px] border-accent bg-tile transition-[top] duration-700 ease-out-quint"
+          className="absolute right-0 size-3 translate-x-1/2 -translate-y-1/2 rounded-full border-[2.5px] border-green bg-tile transition-[top] duration-900 ease-out-quint"
           style={{ top: `${(ly / H) * 100}%` }}
         />
       </div>
@@ -830,6 +870,13 @@ export function Revenue({ step }: WidgetProps) {
 }
 
 const NOTE_SLOT = 62
+const NOTE_LOOK = {
+  build: { icon: GitBranchIcon, tone: "bg-green/16 text-green-ink" },
+  payment: { icon: CreditCardIcon, tone: "bg-blue/14 text-blue-ink" },
+  signups: { icon: UserAdd01Icon, tone: "bg-violet/14 text-violet-ink" },
+  review: { icon: StarIcon, tone: "bg-amber/20 text-amber-ink" },
+  region: { icon: Globe02Icon, tone: "bg-orange/14 text-orange-ink" },
+} as const
 
 export function Notifications({ step }: WidgetProps) {
   const n = NOTIFICATIONS.length
@@ -839,33 +886,34 @@ export function Notifications({ step }: WidgetProps) {
     <div className="flex h-full flex-col justify-between">
       <div className="flex items-center justify-between">
         <p className={TITLE}>Notifications</p>
-        <span className="rounded-full bg-ink-faint px-2 py-1.5 text-[11px] leading-none font-semibold">
+        <span className={`${PILL} bg-rose text-on-dark`}>
           <Digits value={step + 3} />
         </span>
       </div>
       <div className="relative" style={{ height: 3 * NOTE_SLOT - 8 }}>
         {keys.map((k) => {
           const note = NOTIFICATIONS[((k % n) + n) % n]
+          const look = NOTE_LOOK[note.kind]
           const slot = step - k
           const seen = slot >= 0 && slot < 3
           return (
             <div
               key={k}
-              className={`absolute inset-x-0 top-0 flex h-[54px] items-center gap-2.5 rounded-[16px] px-2.5 transition-[transform,opacity,filter] ${GLIDE} ${CARD}`}
+              className={`absolute inset-x-0 top-0 flex h-[54px] items-center gap-2.5 rounded-[10px] pr-3 pl-2.5 transition-[transform,opacity,filter] ${GLIDE} ${CARD}`}
               style={{
                 transform: `translateY(${slot * NOTE_SLOT}px) scale(${slot < 0 ? 0.94 : 1})`,
                 opacity: seen ? [1, 0.8, 0.55][slot] : 0,
                 filter: seen ? "blur(0px)" : "blur(4px)",
               }}
             >
-              <span className="grid size-8 shrink-0 place-items-center rounded-[10px] bg-accent-soft text-accent-ink">
-                <Icon icon={Tick02Icon} className="size-3.5" stroke={3} />
+              <span className={`grid size-[34px] shrink-0 place-items-center rounded-[8px] ${look.tone}`}>
+                <Icon icon={look.icon} className="size-[18px]" />
               </span>
               <div className="flex min-w-0 flex-1 flex-col gap-1.5">
                 <p className="text-[13px] leading-none font-semibold">{note.title}</p>
                 <p className="truncate text-[11px] leading-none text-ink-soft">{note.body}</p>
               </div>
-              <span className="text-[11px] text-ink-soft tabular-nums">
+              <span className="text-[11px] leading-none text-ink-soft tabular-nums">
                 {slot <= 0 ? "now" : `${slot * 2}m`}
               </span>
             </div>
@@ -886,13 +934,13 @@ export function Rollout({ step }: WidgetProps) {
           <Digits value={pct} />%
         </p>
       </div>
-      <div className="relative mx-2.5 mb-2 h-1.5 rounded-full bg-ink-faint">
+      <div className="relative mx-2.5 mb-[7px] h-1.5 rounded-full bg-ink-faint">
         <div
-          className="h-full rounded-full bg-accent transition-[width] duration-900 ease-out-quint"
+          className="h-full rounded-full bg-orange transition-[width] duration-900 ease-out-quint"
           style={{ width: `${pct}%` }}
         />
         <span
-          className="absolute top-1/2 size-5 -translate-1/2 rounded-full bg-tile-inner shadow-(--lift) ring-1 ring-ink-faint transition-[left] duration-900 ease-out-quint"
+          className="absolute top-1/2 size-5 -translate-1/2 rounded-full bg-on-dark shadow-(--lift) ring-1 ring-ink-faint transition-[left] duration-900 ease-out-quint"
           style={{ left: `${pct}%` }}
         />
       </div>
@@ -913,11 +961,11 @@ export function Inbox({ step }: WidgetProps) {
       <div className="flex flex-col gap-2">
         <div className="flex h-2 gap-1">
           <span
-            className="rounded-full bg-accent transition-[flex-grow] duration-900 ease-out-quint"
+            className="rounded-full bg-green transition-[flex-grow] duration-900 ease-out-quint"
             style={{ flexGrow: solved }}
           />
           <span
-            className="rounded-full bg-ink-faint transition-[flex-grow] duration-900 ease-out-quint"
+            className="rounded-full bg-rose transition-[flex-grow] duration-900 ease-out-quint"
             style={{ flexGrow: open }}
           />
         </div>

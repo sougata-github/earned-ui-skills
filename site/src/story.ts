@@ -14,10 +14,10 @@ export const LAUNCH = {
 }
 
 export const CREW = {
-  A: { name: "Ana", tone: "bg-av-violet text-on-dark" },
-  B: { name: "Ben", tone: "bg-av-amber text-on-dark" },
-  K: { name: "Kai", tone: "bg-av-sky text-on-dark" },
-  M: { name: "Mira", tone: "bg-av-rose text-on-dark" },
+  A: { name: "Ana", tone: "bg-violet text-on-dark" },
+  B: { name: "Ben", tone: "bg-amber text-ink-fixed" },
+  K: { name: "Kai", tone: "bg-blue text-on-dark" },
+  M: { name: "Mira", tone: "bg-rose text-on-dark" },
   T: { name: "Theo", tone: "bg-ink text-canvas" },
 } as const
 export type CrewId = keyof typeof CREW
@@ -36,10 +36,12 @@ export const SIGNUP_RANGES = [
   { key: "1M", total: 31204, delta: "+24%", bars: [40, 52, 61, 70, 86, 102, 131] },
 ] as const
 
+/** Revenue by week, with its real ups and downs. Each state slides the
+ *  window one week on, so the curve keeps its number of points. */
 export const MRR = [
-  { value: "18.4", points: [11, 12, 12.6, 13.4, 14.1, 15.2, 16.4, 17.1, 18.4] },
-  { value: "19.1", points: [12, 12.6, 13.4, 14.1, 15.2, 16.4, 17.1, 18.4, 19.1] },
-  { value: "19.6", points: [12.6, 13.4, 14.1, 15.2, 16.4, 17.1, 18.4, 19.1, 19.6] },
+  { value: "18.4", points: [12.4, 14.8, 13.1, 15.9, 14.2, 16.8, 15.6, 17.9, 18.4] },
+  { value: "19.1", points: [14.8, 13.1, 15.9, 14.2, 16.8, 15.6, 17.9, 16.9, 19.1] },
+  { value: "19.6", points: [13.1, 15.9, 14.2, 16.8, 15.6, 17.9, 16.9, 18.6, 19.6] },
 ] as const
 
 export const INBOX = { total: 31, open: [12, 9, 7] } as const
@@ -81,11 +83,11 @@ export const CHAT: readonly { who: CrewId; text: string }[] = [
 ]
 
 export const NOTIFICATIONS = [
-  { title: "Build passed", body: "main #482 in 3m 12s" },
-  { title: "Payment received", body: "Northwind, $2,400.00" },
-  { title: "Signups record", body: "1,467 today" },
-  { title: "New review", body: "5 stars from Lena at Oakline" },
-  { title: "Region live", body: "EU West is serving traffic" },
+  { kind: "build", title: "Build passed", body: "main #482 in 3m 12s" },
+  { kind: "payment", title: "Payment received", body: "Northwind, $2,400.00" },
+  { kind: "signups", title: "Signups record", body: "1,467 today" },
+  { kind: "review", title: "New review", body: "5 stars from Lena at Oakline" },
+  { kind: "region", title: "Region live", body: "EU West is serving traffic" },
 ] as const
 
 export const SEARCH = "refund policy"
