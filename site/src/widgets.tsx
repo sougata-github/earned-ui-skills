@@ -196,8 +196,9 @@ function useTyped(text: string, on: boolean) {
 // ------------------------------------------------------------ column 1
 
 export function Calendar({ step }: WidgetProps) {
-  const launch = step % 2 === 1
-  const day = launch ? LAUNCH.day : LAUNCH.day - 1
+  // Launch day stays marked. Only the note under the month changes, between
+  // the day's two events.
+  const day = LAUNCH.day
   const index = LAUNCH.firstWeekday + day - 1
   const cells = [
     ...Array.from({ length: LAUNCH.firstWeekday }, () => null),
@@ -224,28 +225,19 @@ export function Calendar({ step }: WidgetProps) {
           ))}
         </div>
         <div className="relative mt-1.5 grid grid-cols-7 text-center text-[13px] tabular-nums">
-          {/* The selection glides from the dry run to launch day. */}
           <span
-            className={`absolute top-0 left-0 grid h-8 w-[calc(100%/7)] place-items-center transition-transform ${GLIDE}`}
+            className="absolute top-0 left-0 grid h-8 w-[calc(100%/7)] place-items-center"
             style={{
               transform: `translate(${(index % 7) * 100}%, ${Math.floor(index / 7) * 32}px)`,
             }}
           >
-            <span
-              className={`size-[30px] rounded-full transition-colors ${GLIDE} ${launch ? "bg-orange" : "bg-ink-faint"}`}
-            />
+            <span className="size-[30px] rounded-full bg-orange" />
           </span>
           {cells.map((d, i) => (
             <span
               key={i}
-              className={`relative grid h-8 place-items-center transition-colors ${GLIDE} ${
-                d === day
-                  ? launch
-                    ? "font-semibold text-on-dark"
-                    : "font-semibold"
-                  : d && d < LAUNCH.day - 1
-                    ? "text-ink-soft"
-                    : ""
+              className={`relative grid h-8 place-items-center ${
+                d === day ? "font-semibold text-on-dark" : d && d < day ? "text-ink-soft" : ""
               }`}
             >
               {d}
@@ -255,16 +247,14 @@ export function Calendar({ step }: WidgetProps) {
       </div>
 
       <div className="flex h-10 items-center gap-2 rounded-[10px] bg-ink-faint px-3 text-[12px] font-medium">
-        <span
-          className={`grid place-items-center transition-colors ${GLIDE} ${launch ? "text-orange-ink" : ""}`}
-        >
+        <span className="grid place-items-center text-orange-ink">
           <Icon icon={Calendar03Icon} className="size-4" />
         </span>
         <Swap
           value={
-            launch
-              ? `${PRODUCT.name} ${PRODUCT.version} launch, 9:00 AM`
-              : "Dry run, 4:00 PM"
+            step % 2 === 1
+              ? "Launch call, 4:00 PM"
+              : `${PRODUCT.name} ${PRODUCT.version} launch, 9:00 AM`
           }
         />
       </div>
