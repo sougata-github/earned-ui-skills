@@ -3,38 +3,44 @@
 /* One accent, mostly neutrals (the widget-bento-web lessons). Light is the
    showcase theme, dark is designed too. Colour only through these tokens. */
 @theme {
-  --font-sans: "Geist", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "Geist Mono", ui-monospace, monospace;
+  --font-sans: "Onest", ui-sans-serif, system-ui, sans-serif;
+  --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 :root {
-  /* Light: a near white canvas, soft grey tiles, white cards nested in them. */
-  --canvas: oklch(0.978 0.002 95);
-  --tile: oklch(0.948 0.003 95);
+  /* An off white canvas, soft grey tiles, white cards nested in them. */
+  --canvas: oklch(0.975 0.003 95);
+  --tile: oklch(0.945 0.003 95);
   --tile-inner: oklch(1 0 0);
   --tile-dark: oklch(0.2 0.004 260);
   --ink: oklch(0.2 0.004 260);
-  --ink-soft: oklch(0.2 0.004 260 / 0.55);
-  --ink-faint: oklch(0.2 0.004 260 / 0.12);
+  --ink-soft: oklch(0.2 0.004 260 / 0.52);
+  --ink-faint: oklch(0.2 0.004 260 / 0.09);
   --on-dark: oklch(0.98 0 0);
-  --on-dark-soft: oklch(0.98 0 0 / 0.6);
+  --on-dark-soft: oklch(0.98 0 0 / 0.58);
   --on-dark-faint: oklch(0.98 0 0 / 0.14);
-  --accent: oklch(0.74 0.2 148);
-  --accent-ink: oklch(0.3 0.08 150);
-  --accent-soft: oklch(0.93 0.07 148);
-  --lift: 0 1px 2px oklch(0 0 0 / 0.05), 0 4px 12px -4px oklch(0 0 0 / 0.08);
+  --accent: oklch(0.76 0.2 148);
+  --accent-ink: oklch(0.27 0.08 150);
+  --accent-soft: oklch(0.925 0.075 148);
+  /* The crew's avatars: the one place besides the accent with colour. */
+  --av-rose: oklch(0.68 0.2 5);
+  --av-amber: oklch(0.76 0.16 70);
+  --av-violet: oklch(0.62 0.2 290);
+  --av-sky: oklch(0.7 0.14 235);
+  --lift: 0 1px 2px oklch(0 0 0 / 0.04), 0 3px 10px -3px oklch(0 0 0 / 0.07);
 }
 
 .dark {
-  --canvas: oklch(0.16 0.004 260);
-  --tile: oklch(0.21 0.004 260);
+  --canvas: oklch(0.15 0.004 260);
+  --tile: oklch(0.205 0.004 260);
   --tile-inner: oklch(0.26 0.004 260);
-  --tile-dark: oklch(0.11 0.003 260);
+  --tile-dark: oklch(0.1 0.003 260);
   --ink: oklch(0.97 0 0);
   --ink-soft: oklch(0.97 0 0 / 0.55);
-  --ink-faint: oklch(0.97 0 0 / 0.12);
+  --ink-faint: oklch(0.97 0 0 / 0.1);
   --accent-soft: oklch(0.34 0.08 148);
-  --accent-ink: oklch(0.92 0.08 148);
+  --accent-ink: oklch(0.2 0.06 150);
   --lift: inset 0 1px 0 oklch(1 0 0 / 0.05), 0 1px 2px oklch(0 0 0 / 0.4);
 }
 
@@ -52,6 +58,10 @@
   --color-accent: var(--accent);
   --color-accent-ink: var(--accent-ink);
   --color-accent-soft: var(--accent-soft);
+  --color-av-rose: var(--av-rose);
+  --color-av-amber: var(--av-amber);
+  --color-av-violet: var(--av-violet);
+  --color-av-sky: var(--av-sky);
 }
 
 html,
@@ -63,28 +73,81 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* A value rolls in from below when it changes. */
-@keyframes roll-in {
-  from {
-    transform: translateY(60%);
-    opacity: 0;
-    filter: blur(2px);
-  }
-  to {
-    transform: none;
-    opacity: 1;
-    filter: none;
-  }
-}
-.roll {
+/* ------------------------------------------------------------ the title */
+
+/* Nothing but the words at first: they resolve out of a blur while they
+   settle from a slightly smaller scale, the second word a beat after the
+   first. Then the whole line passes toward the viewer and is gone. */
+.title-word {
   display: inline-block;
-  animation: roll-in 420ms cubic-bezier(0.22, 1, 0.36, 1);
+  opacity: 0;
+  transform: translateY(0.06em) scale(0.94);
+  filter: blur(18px);
+  transition:
+    opacity 900ms var(--ease-out-quint),
+    transform 1400ms var(--ease-out-expo),
+    filter 900ms var(--ease-out-quint);
+  will-change: transform, filter, opacity;
+}
+.title {
+  transition:
+    opacity 650ms cubic-bezier(0.4, 0, 0.6, 1),
+    transform 800ms cubic-bezier(0.4, 0, 0.6, 1),
+    filter 650ms cubic-bezier(0.4, 0, 0.6, 1);
+  will-change: transform, filter, opacity;
+}
+[data-phase="title"] .title-word,
+[data-phase="out"] .title-word {
+  opacity: 1;
+  transform: none;
+  filter: blur(0);
+}
+[data-phase="title"] .title-word:nth-child(2) {
+  transition-delay: 140ms;
+}
+[data-phase="out"] .title,
+[data-phase="wall"] .title,
+[data-phase="live"] .title {
+  opacity: 0;
+  transform: scale(1.07);
+  filter: blur(14px);
+}
+[data-phase="blank"] .title,
+[data-phase="blank"] .title-word {
+  transition: none;
 }
 
-/* Something new arrives: a short rise and fade. */
-@keyframes arrive {
+/* ------------------------------------------------------------ pieces */
+
+/* An odometer digit: a reel of 0 to 9 that turns to its value. clip-path,
+   not overflow, so the digit keeps its text baseline. */
+.digits {
+  display: inline-flex;
+  align-items: baseline;
+  font-variant-numeric: tabular-nums;
+}
+.digit {
+  position: relative;
+  display: block;
+  clip-path: inset(0);
+}
+.digit-reel {
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  text-align: center;
+  transition: transform 800ms var(--ease-out-quint);
+}
+.digit-reel > span {
+  display: block;
+}
+
+/* A mark that pops in when its state arrives. */
+@keyframes pop {
   from {
-    transform: translateY(8px) scale(0.98);
+    transform: scale(0.5);
     opacity: 0;
   }
   to {
@@ -92,8 +155,8 @@ body {
     opacity: 1;
   }
 }
-.arrive {
-  animation: arrive 380ms cubic-bezier(0.22, 1, 0.36, 1);
+.pop {
+  animation: pop 420ms var(--ease-out-quint);
 }
 
 @keyframes caret {
@@ -119,9 +182,36 @@ body {
   animation: spin 0.8s linear infinite;
 }
 
+/* Someone is typing: three dots breathing in turn. */
+@keyframes breathe {
+  0%,
+  60%,
+  100% {
+    opacity: 0.3;
+    transform: none;
+  }
+  30% {
+    opacity: 1;
+    transform: translateY(-2px);
+  }
+}
+.dots > span {
+  animation: breathe 1.2s ease-in-out infinite;
+}
+.dots > span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+.dots > span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .roll,
-  .arrive {
+  .pop,
+  .dots > span,
+  .spin {
     animation: none;
+  }
+  .digit-reel {
+    transition: none;
   }
 }
