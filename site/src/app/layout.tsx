@@ -15,6 +15,17 @@ export const metadata: Metadata = {
   applicationName: SITE_NAME,
   openGraph: { siteName: SITE_NAME, type: "website", locale: "en_US" },
   twitter: { card: "summary_large_image" },
+  // The mark follows the browser's theme: the dark tile on a light browser,
+  // the light tile on a dark one. PNGs for what cannot draw an SVG icon.
+  icons: {
+    icon: [
+      { url: "/icon-for-light.svg", type: "image/svg+xml", media: "(prefers-color-scheme: light)" },
+      { url: "/icon-for-dark.svg", type: "image/svg+xml", media: "(prefers-color-scheme: dark)" },
+      { url: "/icon-for-light.png", type: "image/png", sizes: "96x96", media: "(prefers-color-scheme: light)" },
+      { url: "/icon-for-dark.png", type: "image/png", sizes: "96x96", media: "(prefers-color-scheme: dark)" },
+    ],
+    apple: [{ url: "/apple-icon.png", sizes: "180x180" }],
+  },
 }
 
 export const viewport: Viewport = {
